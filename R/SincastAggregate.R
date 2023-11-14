@@ -70,26 +70,27 @@ setMethod("SincastAggregate", "Seurat", function(object,
                                                  pool.factor = NULL,
                                                  sep = ".", replace = FALSE, ...) {
 
-  object <- Sincast::CreateSincastAssays(object)
-
   # Check the existence of the 'pseudobulk' assay.
   SincastAssays <- Seurat::Misc(object, slot = "SincastAssays")
-
-  if(is(SincastAssays, 'SincastAssays')){
-    if(!replace & !is.null(SincastAssays@pseudobulk)){
-      stop("A 'pseudobulk‘ assay already exists, set replace = T to enforce a replacement.")
-    }
-
-  }else{
-    if(!replace){
-      stop("Invalid 'SincastAssays' object, set replace = T to enforce a replacement.")
-    }else{
-      SincastAssays <- new('SincastAssays')
-    }
-
+  if(is.null(SincastAssays)){
+    SincastAssays <- Sincast::CreateSincastAssays(object)
   }
 
-
+  if (is(SincastAssays, "SincastAssays")) {
+    if (!replace & !is.null(SincastAssays@pseudobulk)) {
+      stop(
+        "A 'pseudobulk‘ assay already exists, set replace = T to enforce a replacement."
+      )
+    }
+  } else {
+    if (!replace) {
+      stop(
+        "Invalid 'SincastAssays' object, set replace = T to enforce a replacement."
+      )
+    } else {
+      SincastAssays <- new("SincastAssays")
+    }
+  }
 
   # Get defaults assay.
   if (is.null(assay)) {
@@ -145,8 +146,11 @@ setMethod("SincastAggregate", "Seurat", function(object,
       assay = assay
     )[, group == g]
 
-    # Generate pseudo-bulks.
-    out[[g]] <- replicate(n = n.gen, expr = generate.one.pseudo.bulk(tmp.data, n.pool, aggregate.method))
+    # Generate pseudobulk.
+    out[[g]] <- replicate(
+      n = n.gen,
+      expr = generate.one.pseudo.bulk(tmp.data, n.pool, aggregate.method)
+    )
     colnames(out[[g]]) <- paste(g, sep, 1:n.gen, sep = "")
     agg.label <- c(agg.label, rep(g, n.gen))
   }
@@ -158,33 +162,39 @@ setMethod("SincastAggregate", "Seurat", function(object,
   meta.data <- data.frame(agg.label)
   rownames(meta.data) <- colnames(out)
 
-
   # Generate a token for this aggregation run.
   SincastToken <- GenerateSincastToken()
+
   # Create Seurat object: SincastPseudoBulk to store the result.
   suppressWarnings(
-    SincastPseudoBulk <- Seurat::CreateSeuratObject(
+    SincastPseudobulk <- Seurat::CreateSeuratObject(
       counts = Matrix::Matrix(out),
       assay = assay,
       meta.data = meta.data,
-      project = SincastToken@timestamp, ...
+      project = SincastToken@id, ...
     )
   )
-  Seurat::Idents(SincastPseudoBulk) <- "agg.label" # Add aggregated annotation.
-  Seurat::Misc(SincastPseudoBulk, slot = "SincastToken") <- SincastToken # Add token.
+  Seurat::Idents(SincastPseudobulk) <- "agg.label" # Add aggregated annotation.
+  Seurat::Misc(SincastPseudobulk, slot = "SincastToken") <- SincastToken # Add token.
 
   # Generate command log.
-  SincastPseudoBulk@commands$CreateSincastAssays <- deparse(match.call())
+  SincastPseudobulk@commands$CreateSincastAssays <- deparse(match.call())
 
-  # Append the "pseudobulk" assay by "SincastPseudoBulk".
-  message("SincastAggregate: Append the 'pseudobulk' assay in the 'SincastAssays' object by a new aggregation result.")
-  suppressWarnings(Seurat::Misc(object, slot = "SincastAssays")@pseudobulk <- SincastPseudoBulk)
+  # Add or replace the pseudobulk assay by SincastPseudobulk.
+  message(
+    "SincastAggregate: Add or replace the 'pseudobulk' assay in the 'SincastAssays'",
+          "object by a new aggregation result."
+  )
+
+  SincastAssays@pseudobulk <- SincastPseudobulk
+  suppressWarnings(Seurat::Misc(object, slot = "SincastAssays") <- SincastAssays)
 
   # Summary
+  test.result <- validObject(SincastAssays, test = T)
+
   message(
-    "SincastAggregate: 'SincastAssays' object contains ",
-    length(pseudobulk)," valid pseudobulk objects and ",
-    length(Seurat::Misc(object, slot = "SincastAssays")@imputation), " valid imputation objects."
+    "SincastAggregate: 'pseudobulk' assay: ", test.result["pseudobulk"],
+    "; 'imputation' assay: ", test.result["imputation"]
   )
 
   object

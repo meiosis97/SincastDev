@@ -20,7 +20,7 @@ SincastAggregate(
   size.factor = 1,
   pool.factor = NULL,
   sep = ".",
-  remove.invalid = TRUE,
+  replace = c("None", "All", "invalid"),
   ...
 )
 
@@ -36,7 +36,7 @@ SincastAggregate(
   size.factor = 1,
   pool.factor = NULL,
   sep = ".",
-  remove.invalid = TRUE,
+  replace = FALSE,
   ...
 )
 }
@@ -61,13 +61,12 @@ SincastAggregate(
 
 \item{sep}{To be added.}
 
-\item{remove.invalid}{Logical. Whether to check the validity of the existing \code{SincastAssays} object, and
-remove the invalid elements (e.g, non-\code{Seurat} object) identified in \code{Sincast} assays.}
+\item{replace}{Whether to replace the existing 'pseudobulk' assay.}
 }
 \value{
 An updated \code{Seurat} object with an additional \code{SincastAssays}
-object in the \code{misc} slot. Aggregated pseudobulk samples are stored as an appended element
-of the Sincast assay \code{pseudobulk} embedded in \code{Seurat::MISC(object, slot = 'SincastAssays')}.
+object in the \code{misc} slot. Aggregated pseudobulk samples are stored in
+the Sincast assay \code{pseudobulk} embedded in \code{Seurat::MISC(object, slot = 'SincastAssays')}.
 }
 \description{
 To be added.
