@@ -32,12 +32,11 @@ generate.one.pseudo.bulk <- function(data, n.pool, aggregate.method) {
 #' @param size.factor To be added.
 #' @param pool.factor To be added.
 #' @param sep To be added.
-#' @param remove.invalid Logical. Whether to check the validity of the existing \code{SincastAssays} object, and
-#' remove the invalid elements (e.g, non-\code{Seurat} object) identified in \code{Sincast} assays.
+#' @param replace Whether to replace the existing 'pseudobulk' assay.
 #'
 #' @return An updated \code{Seurat} object with an additional \code{SincastAssays}
-#' object in the \code{misc} slot. Aggregated pseudobulk samples are stored as an appended element
-#' of the Sincast assay \code{pseudobulk} embedded in \code{Seurat::MISC(object, slot = 'SincastAssays')}.
+#' object in the \code{misc} slot. Aggregated pseudobulk samples are stored in
+#' the Sincast assay \code{pseudobulk} embedded in \code{Seurat::MISC(object, slot = 'SincastAssays')}.
 #'
 #' @family SincastAssays related methods
 #'
@@ -54,7 +53,7 @@ setGeneric("SincastAggregate", function(object,
                                         n.pool = 15,
                                         size.factor = 1,
                                         pool.factor = NULL,
-                                        sep = ".", remove.invalid = TRUE, ...) {
+                                        sep = ".", replace = c("None", "All", "invalid"), ...) {
   standardGeneric("SincastAggregate")
 })
 
@@ -69,7 +68,29 @@ setMethod("SincastAggregate", "Seurat", function(object,
                                                  n.pool = 15,
                                                  size.factor = 1,
                                                  pool.factor = NULL,
-                                                 sep = ".", remove.invalid = TRUE, ...) {
+                                                 sep = ".", replace = FALSE, ...) {
+
+  object <- Sincast::CreateSincastAssays(object)
+
+  # Check the existence of the 'pseudobulk' assay.
+  SincastAssays <- Seurat::Misc(object, slot = "SincastAssays")
+
+  if(is(SincastAssays, 'SincastAssays')){
+    if(!replace & !is.null(SincastAssays@pseudobulk)){
+      stop("A 'pseudobulk‘ assay already exists, set replace = T to enforce a replacement.")
+    }
+
+  }else{
+    if(!replace){
+      stop("Invalid 'SincastAssays' object, set replace = T to enforce a replacement.")
+    }else{
+      SincastAssays <- new('SincastAssays')
+    }
+
+  }
+
+
+
   # Get defaults assay.
   if (is.null(assay)) {
     assay <- Seurat::DefaultAssay(object)
@@ -146,7 +167,7 @@ setMethod("SincastAggregate", "Seurat", function(object,
       counts = Matrix::Matrix(out),
       assay = assay,
       meta.data = meta.data,
-      project = SincastToken@id, ...
+      project = SincastToken@timestamp, ...
     )
   )
   Seurat::Idents(SincastPseudoBulk) <- "agg.label" # Add aggregated annotation.
@@ -155,17 +176,9 @@ setMethod("SincastAggregate", "Seurat", function(object,
   # Generate command log.
   SincastPseudoBulk@commands$CreateSincastAssays <- deparse(match.call())
 
-  # Create SincastAssays object.
-  object <- Sincast::CreateSincastAssays(object, remove.invalid = remove.invalid)
-
   # Append the "pseudobulk" assay by "SincastPseudoBulk".
   message("SincastAggregate: Append the 'pseudobulk' assay in the 'SincastAssays' object by a new aggregation result.")
-  pseudobulk <- Seurat::Misc(object, slot = "SincastAssays")@pseudobulk
-  orig.name <- names(pseudobulk)
-  new.name <- c(orig.name, SincastToken@id)
-  pseudobulk <- c(pseudobulk, SincastPseudoBulk)
-  names(pseudobulk) <- new.name
-  suppressWarnings(Seurat::Misc(object, slot = "SincastAssays")@pseudobulk <- pseudobulk)
+  suppressWarnings(Seurat::Misc(object, slot = "SincastAssays")@pseudobulk <- SincastPseudoBulk)
 
   # Summary
   message(
