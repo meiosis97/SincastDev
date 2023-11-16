@@ -25,6 +25,7 @@ generate.one.pseudo.bulk <- function(data, n.pool, aggregate.method) {
 #' @param object A \code{Seurat} object
 #' @param assay To be added.
 #' @param layer To be added.
+#' @param cells To be added.
 #' @param features To be added.
 #' @param group.by To be added.
 #' @param sample.method To be added.
@@ -34,9 +35,7 @@ generate.one.pseudo.bulk <- function(data, n.pool, aggregate.method) {
 #' @param sep To be added.
 #' @param replace Whether to replace the existing 'pseudobulk' assay.
 #'
-#' @return An updated \code{Seurat} object with an additional \code{SincastAssays}
-#' object in the \code{misc} slot. Aggregated pseudobulk samples are stored in
-#' the Sincast assay \code{pseudobulk} embedded in \code{Seurat::MISC(object, slot = 'SincastAssays')}.
+#' @return A \code{Seurat} object with updated \code{Sincast pseudobulk} assay.
 #'
 #' @family SincastAssays related methods
 #'
@@ -46,6 +45,7 @@ generate.one.pseudo.bulk <- function(data, n.pool, aggregate.method) {
 setGeneric("SincastAggregate", function(object,
                                         assay = NULL,
                                         layer = "counts",
+                                        cells = NULL,
                                         features = NULL,
                                         group.by = "ident",
                                         sample.method = c("equal.size", "equal.prop"),
@@ -61,6 +61,7 @@ setGeneric("SincastAggregate", function(object,
 setMethod("SincastAggregate", "Seurat", function(object,
                                                  assay = NULL,
                                                  layer = "counts",
+                                                 cells = NULL,
                                                  features = NULL,
                                                  group.by = "ident",
                                                  sample.method = c("equal.size", "equal.prop"),
@@ -70,28 +71,63 @@ setMethod("SincastAggregate", "Seurat", function(object,
                                                  pool.factor = NULL,
                                                  sep = ".", replace = FALSE, ...) {
 
-  # Check the existence of the 'pseudobulk' assay.
-  SincastAssays <- Seurat::Misc(object, slot = "SincastAssays")
-  if(is.null(SincastAssays)){
-    SincastAssays <- new('SincastAssays')
+  # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
+  test.SincastObject <- Sincast::CheckSincastObject(object, complete = TRUE)
+
+  # If the 'Sincast' object is missing or unrecognized, create an empty 'Sincast' object.
+  if(any(test.SincastObject)){
+    message("SincastAggregate: Create an empty 'Sincsat' object.")
+    SincastObject <- Sincast::CreateSincastObject(
+      by = "SincastAggregate",
+      command = deparse(match.call())
+    )
+
   }else{
+    SincastObject <- Sincast::GetSincastObject(object)
 
   }
 
-  if (is(SincastAssays, "SincastAssays")) {
-    if (!replace & !is.null(SincastAssays@pseudobulk)) {
+  # If the 'Sincast' object is not of the class 'Sincast', either replace it or return an error.
+  if(!replace & test.SincastObject['wrong.class']){
+    stop(
+      "Set 'replace = T' to enforce a replacement for the unrecorgnized 'Sincast' object."
+    )
+  }
+
+
+
+
+
+
+
+
+  if(test.SincastObject['missing.object']){
+    SincastObject <- Sincast::CreateSincastObject(
+      by = "SincastAggregate",
+      command = deparse(match.call())
+    )
+
+  # If the 'Sincast' object is not of the class 'Sincast', either replace it or return an error.
+  }else if(test.SincastObject['wrong.class']){
+    if(!replace){
       stop(
-        "A 'pseudobulk‘ assay already exists, set replace = T to enforce a replacement."
+        "Set 'replace = T' to enforce a replacement for the unrecorgnized 'Sincast' object."
+      )
+    }else{
+      SincastObject <- Sincast::CreateSincastObject(
+        by = "SincastAggregate",
+        command = deparse(match.call())
       )
     }
-  } else {
-    if (!replace) {
-      stop(
-        "Invalid 'SincastAssays' object, set replace = T to enforce a replacement."
-      )
-    } else {
-      SincastAssays <- new("SincastAssays")
-    }
+  }
+
+  SincastAssays <- SincastObject@SincastAssays
+
+  # If a 'pseudobulk' assay already exists, either replace it or return an error.
+  if (!is.null(SincastAssays@pseudobulk)) {
+    stop(
+      "A 'pseudobulk‘ assay already exists, set replace = T to enforce a replacement."
+    )
   }
 
   # Get defaults assay.

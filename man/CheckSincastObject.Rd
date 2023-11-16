@@ -8,9 +8,9 @@
 \alias{CheckSincastObject,Seurat-method}
 \title{Check the validity of the \code{Sincast} object in \code{Seurat}'s \code{misc} slot.}
 \usage{
-CheckSincastObject(object, test = TRUE, complete = TRUE, ...)
+CheckSincastObject(object, test = TRUE, complete = TRUE, slient = FALSE, ...)
 
-\S4method{CheckSincastObject}{Seurat}(object, test = TRUE, complete = TRUE, ...)
+\S4method{CheckSincastObject}{Seurat}(object, test = TRUE, complete = TRUE, silent = FALSE, ...)
 }
 \arguments{
 \item{object}{A \code{Seurat} object.}
@@ -20,6 +20,8 @@ vector of strings describing the problems. If test is FALSE validity failure gen
 
 \item{complete}{Logical; if TRUE, call validity check for each slot of the
 existing \code{Sincast} object.}
+
+\item{silent}{Logical; if TRUE, suppress all messages.}
 }
 \value{
 Logical indicates whether \code{Seurat}'s \code{misc} slot

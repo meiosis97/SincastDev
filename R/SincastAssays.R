@@ -24,8 +24,8 @@ setGeneric("GetSincastAssays", function(object, assay = c("both", "pseudobulk", 
 #' @rdname GetSincastAssays
 setMethod("GetSincastAssays", "Seurat", function(object,
                                                  assay = c("both", "pseudobulk", "imputation"), ...) {
-  # Check the validity of the "Sincast" object in "Seurat"'s misc slot.
-  test.SincastObject <- Sincast::CheckSincastObject(object, complete = TRUE)
+  # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
+  test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
   # If the "Sincast" object is missing, or invalid, return a NULL
   if (any(test.SincastObject)) {
@@ -33,12 +33,31 @@ setMethod("GetSincastAssays", "Seurat", function(object,
   } else {
     assay <- match.arg(assay)
     out <- Sincast::GetSincastObject(object)@SincastAssays
+    test.SincastAssays <- validObject(out, test = TRUE)
 
+    silent <- all(test.SincastAssays %in% c("Valid", "Empty"))
     if (assay == "pseudobulk") {
       out <- out@pseudobulk
-    } else {
-      out <- out@imputation
+      if(test.SincastAssays["pseudobulk"] == "Valid"){
+        silent = TRUE
+      }
     }
+
+    if (assay == "imputation") {
+      out <- out@imputation
+      if(test.SincastAssays["imputation"] == "Valid"){
+        silent = TRUE
+      }
+    }
+
+    if(!silent){
+      message(
+        "GetSincastAssays: Check 'SincastAssays': ",
+        "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
+        "; 'imputation' assay: ", test.SincastAssays["imputation"], collapse = ''
+      )
+    }
+
   }
 
   out
@@ -71,17 +90,19 @@ setGeneric("GetSincastAssays<-", function(object,
 #' @rdname GetSincastAssays
 setMethod("GetSincastAssays<-", "Seurat", function(object,
                                                  assay = c("both", "pseudobulk", "imputation"), value, ...) {
-  # Check the validity of the "Sincast" object in "Seurat"'s misc slot.
-  test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
+  # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
+  Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
 
   assay <- match.arg(assay)
   SincastObject <- Sincast::GetSincastObject(object)
 
   if (assay == "both") {
     SincastObject@SincastAssays <- value
-  } else if (assay == "pseudobulk") {
+  }
+  if (assay == "pseudobulk") {
     SincastObject@SincastAssays@pseudobulk <- value
-  } else if (assay == "imputation") {
+  }
+  if (assay == "imputation") {
     SincastObject@SincastAssays@imputation <- value
   }
 
@@ -132,7 +153,7 @@ setMethod("CleanSincastAssays", "Seurat", function(object,
   if (is.null(SincastObject)) {
     if (remove.invalid) {
       message(
-        "CleanSincastAssays: Add (replace with) a new 'Sincast' object as 'remove.invalid' = TRUE."
+        "CleanSincastAssays: Add (replace with) a new 'Sincast' object as 'remove.invalid = TRUE'."
       )
       SincastObject <- Sincast::CreateSincastObject(
         by = "CleanSincastAssays",
@@ -147,7 +168,7 @@ setMethod("CleanSincastAssays", "Seurat", function(object,
     SincastAssays <- SincastObject@SincastAssays
     test.SincastAssays <- validObject(SincastAssays, test = T)
     message(
-      "CleanSincastAssays: before clean up: ",
+      "CleanSincastAssays: Before clean up: ",
       "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
       "; 'imputation' assay: ", test.SincastAssays["imputation"]
     )
@@ -174,13 +195,13 @@ setMethod("CleanSincastAssays", "Seurat", function(object,
     if (!is.pseudobulk.valid) {
       if (remove.invalid) {
         message(
-          "CleanSincastAssays: Remove invalid 'pseudobulk' assay  as 'remove.invalid' = TRUE."
+          "CleanSincastAssays: Remove invalid 'pseudobulk' assay  as 'remove.invalid = TRUE'."
         )
         SincastAssays@pseudobulk <- NULL
         test.SincastAssays["pseudobulk"] <- "Empty"
       } else {
         message(
-          "CleanSincastAssays: ", "the 'pseudobulk' assay is invalid. Consider replace it by setting 'remove.invalid' = TRUE."
+          "CleanSincastAssays: ", "the 'pseudobulk' assay is invalid. Consider replace it by setting 'remove.invalid = TRUE'."
         )
       }
     }
@@ -189,19 +210,19 @@ setMethod("CleanSincastAssays", "Seurat", function(object,
     if (!is.imputation.valid) {
       if (remove.invalid) {
         message(
-          "CleanSincastAssays: Remove invalid 'imputation' assay as 'remove.invalid' = TRUE."
+          "CleanSincastAssays: Remove invalid 'imputation' assay as 'remove.invalid = TRUE'."
         )
         SincastAssays@imputation <- NULL
         test.SincastAssays["imputation"] <- "Empty"
       } else {
         message(
-          "CleanSincastAssays: ", "the 'imputation' assay is invalid. Consider replace it by setting 'remove.invalid' = TRUE."
+          "CleanSincastAssays: ", "the 'imputation' assay is invalid. Consider replace it by setting 'remove.invalid = TRUE'."
         )
       }
     }
 
     message(
-      "CleanSincastAssays: after clean up: ",
+      "CleanSincastAssays: After clean up: ",
       "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
       "; 'imputation' assay: ", test.SincastAssays["imputation"]
     )

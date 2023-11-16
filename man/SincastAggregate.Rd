@@ -12,6 +12,7 @@ SincastAggregate(
   object,
   assay = NULL,
   layer = "counts",
+  cells = NULL,
   features = NULL,
   group.by = "ident",
   sample.method = c("equal.size", "equal.prop"),
@@ -28,6 +29,7 @@ SincastAggregate(
   object,
   assay = NULL,
   layer = "counts",
+  cells = NULL,
   features = NULL,
   group.by = "ident",
   sample.method = c("equal.size", "equal.prop"),
@@ -47,6 +49,8 @@ SincastAggregate(
 
 \item{layer}{To be added.}
 
+\item{cells}{To be added.}
+
 \item{features}{To be added.}
 
 \item{group.by}{To be added.}
@@ -64,9 +68,7 @@ SincastAggregate(
 \item{replace}{Whether to replace the existing 'pseudobulk' assay.}
 }
 \value{
-An updated \code{Seurat} object with an additional \code{SincastAssays}
-object in the \code{misc} slot. Aggregated pseudobulk samples are stored in
-the Sincast assay \code{pseudobulk} embedded in \code{Seurat::MISC(object, slot = 'SincastAssays')}.
+A \code{Seurat} object with updated \code{Sincast pseudobulk} assay.
 }
 \description{
 To be added.

@@ -72,7 +72,7 @@ setMethod("AddSincastObject", "Seurat", function(object,
 
     if (replace) {
       message(
-        "AddSincastObject: replacing the existing 'Sincast' object as replace = TRUE."
+        "AddSincastObject: Replacing the existing 'Sincast' object as replace = TRUE."
       )
       # Generate a Sincast object,
       SincastObject <- Sincast::CreateSincastObject(
@@ -81,7 +81,7 @@ setMethod("AddSincastObject", "Seurat", function(object,
       )
     } else {
       message(
-        "AddSincastObject: A 'Sincast‘ object already exists, set 'replace' = T to enforce a replacement,",
+        "AddSincastObject: A 'Sincast‘ object already exists, set 'replace = T' to enforce a replacement,",
         "or use 'CleanSincastAssays' function to modify 'SincastAssays' specifically."
       )
     }
@@ -107,6 +107,7 @@ setMethod("AddSincastObject", "Seurat", function(object,
 #'  vector of strings describing the problems. If test is FALSE validity failure generates an error.
 #' @param complete Logical; if TRUE, call validity check for each slot of the
 #' existing \code{Sincast} object.
+#' @param silent Logical; if TRUE, suppress all messages.
 #'
 #' @return Logical indicates whether \code{Seurat}'s \code{misc} slot
 #' contains a valid \code{Sincast} object.
@@ -116,39 +117,54 @@ setMethod("AddSincastObject", "Seurat", function(object,
 #' @export
 #' @rdname CheckSincastObject
 #' @aliases Sincast, SincastAssays, Seurat
-setGeneric("CheckSincastObject", function(object, test = TRUE, complete = TRUE, ...) {
+setGeneric("CheckSincastObject", function(object, test = TRUE,
+                                          complete = TRUE, slient = FALSE, ...) {
   standardGeneric("CheckSincastObject")
 })
 
 #' @rdname CheckSincastObject
-setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE, complete = TRUE, ...) {
-  missing.object <- FALSE
-  wrong.class <- FALSE
+setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
+                                                   complete = TRUE, silent = FALSE, ...) {
 
   SincastObject <- Seurat::Misc(object, slot = "Sincast")
+  missing.object <- FALSE
+  wrong.class <- FALSE
+  problem <- NULL
+  test.SincastAssays <- NULL
+
   if (is.null(SincastObject)) {
     problem <- "'Sincast object' doesn't exist."
-    if (test) message(problem) else stop(problem)
-    missing.object <- wrong.class <- TRUE
+    missing.object <- TRUE
   } else if (is(SincastObject, "SincastObject")) {
     problem <- "Unrecroglized 'Sincast' object."
-    if (test) message(problem) else stop(problem)
     wrong.class <- TRUE
   } else if (complete) {
-    message(
-      "CheckSincastObject: A 'Sincast' object already exists. Check the validity of each slot."
-    )
-
-    # Test the validity of 'SincastAssays' object.
     test.SincastAssays <- validObject(SincastObject@SincastAssays, test = TRUE)
-    message(
-      "CheckSincastObject: check 'SincastAssays': ",
-      "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
-      "; 'imputation' assay: ", test.SincastAssays["imputation"]
-    )
+
+    if (!silent) {
+      message(
+        "CheckSincastObject: A 'Sincast' object exists. Check the validity of each slot."
+      )
+    }
+
+    if(!all(test.SincastAssays %in% c("Valid", "Empty"))){
+      problem <- paste(
+        "CheckSincastObject: Check 'SincastAssays': ",
+        "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
+        "; 'imputation' assay: ", test.SincastAssays["imputation"], collapse = ''
+      )
+    }
+
   }
 
-  c(missing.object = missing.object, wrong.class = wrong.class)
+  # Print error messages.
+  if (!is.null(problem)) {
+    if (!test) strop(problem) else if (!silent) message(problem)
+  }
+
+  out <- c(missing.object = missing.object, wrong.class = wrong.class)
+  attr(out, 'Sincastassays') <- test.SincastAssays
+  out
 })
 
 
@@ -174,7 +190,7 @@ setGeneric("GetSincastObject", function(object, ...) {
 
 #' @rdname GetSincastObject
 setMethod("GetSincastObject", "Seurat", function(object, ...) {
-  # Check the validity of the "Sincast" object in "Seurat"'s misc slot.
+  # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
   test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
   # If the "Sincast" object is missing, or invalid, return a NULL
@@ -210,9 +226,7 @@ setGeneric("GetSincastObject<-", function(object, value, ...) {
 
 #' @rdname GetSincastObject
 setMethod("GetSincastObject<-", "Seurat", function(object, value, ...) {
-
   suppressWarnings(Seurat::Misc(object, slot = "Sincast") <- value)
 
   object
 })
-
