@@ -74,7 +74,7 @@ To be added.
 \seealso{
 Other SincastAssays related methods: 
 \code{\link{CleanSincastAssays}()},
-\code{\link{CreateSincastAssays}()},
+\code{\link{GetSincastAssays}()},
 \code{\link{SincastAssays-class}}
 }
 \concept{SincastAssays related methods}

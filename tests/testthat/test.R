@@ -1,17 +1,11 @@
 testdata <- readRDS(file = 'C:/Users/yidid/SincastDev/data/testdata.rds')
-testdata
-
-
-testobj <- CreateSincastAssays(testdata)
-Seurat::Misc(testobj, slot = "SincastAssays") <- list(a = 1,b=2,c=3)
-testobj <- CreateSincastAssays(testobj, replace = T)
-testobj <- SincastAggregate(testobj, size.factor = 10, replace = T)
-
-
+testobj <- AddSincastObject(testdata)
 testobj@misc
-testobj@misc$SincastAssays@pseudobulk[[1]]
-validObject(testobj@misc$SincastAssays, test = T)
+GetSincastObject(testobj)
+CheckSincastObject(testobj)
+CleanSincastAssays(testobj)
 
 
-library(Sincast)
-names(testobj@misc)
+GetSincastAssays(testobj, assay = 'pseudobulk') <- testdata
+CleanSincastAssays(testdata)@misc
+CleanSincastAssays(testobj)@misc

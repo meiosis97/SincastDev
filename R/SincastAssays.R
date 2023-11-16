@@ -1,129 +1,91 @@
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Sincast object, could be used
+# GetSincastAssays
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Sincast <- setClass(
-#   Class = "Sincast",
-#   contains = "Seurat"
-# )
-#
-# setAs("Seurat", "Sincast", function(from, to) {
-#   arguments <- paste(slotNames(from), "=from@", slotNames(from), sep = "", collapse = ",")
-#   text2expr <- paste("Sincast(", arguments, ")", sep = "")
-#   eval(parse(text = text2expr))
-# })
-
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# S4 class definition
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-NullSeurat <- setClassUnion(
-  name = "NullSeurat",
-  members = c("NULL", "Seurat")
-)
-
-
-#' An S4 class to store \code{Sincast} aggregation or imputation results.
-#'
-#' To be added.
-#'
-#' @slot pseudobulk A list of \code{Seurat} object storing aggregated pseudobulk.
-#' @slot imputation A list of \code{Seurat} object storing imputed single cells.
-#'
-#' @family SincastAssays related methods
-#'
-#' @name SincastAssays-class
-#' @rdname SincastAssays-class
-#' @aliases Sincast, SincastAssays
-SincastAssays <- setClass(
-  Class = "SincastAssays",
-  slots = list(
-    pseudobulk = "NullSeurat",
-    imputation = "NullSeurat"
-  )
-)
-
-#' SincastAssays Object Validity
-#'
-#' Validation of \code{SincastAssays} objects is handled by \code{\link[methods]{validObject}}.
-#'
-#' @name SincastAssays-validity
-#' @rdname SincastAssays-class
-#' @aliases Sincast, SincastAssays
-setValidity(
-  Class = "SincastAssays",
-  method = function(object) {
-    test <- function(assay) {
-      out <- "Valid"
-      if (is.null(assay)) {
-        out <- "Empty"
-      } else {
-        SincastToken <- Seurat::Misc(assay, slot = "SincastToken")
-        if (!is(SincastToken, "SincastToken")) out <- "Sincast token is either missing or invalid"
-      }
-      out
-    }
-
-    test.result <- c(pseudobulk = "Valid", imputation = "Valid")
-    test.result["pseudobulk"] <- test(object@pseudobulk)
-    test.result["imputation"] <- test(object@imputation)
-
-
-    test.result
-  }
-)
-
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# CreateSincastAssays
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#' Add a \code{SincastAssays} object to \code{Seurat}'s \code{misc} slot.
+#' Extract the \code{SincastAssays} object from a \code{Sincast} appended \code{Seurat} object.
 #'
 #' To be added.
 #'
 #' @param object A \code{Seurat} object.
-#' @param replace Whether to replace the existing \code{SincastAssays} object.
+#' @param assay Either \code{"both"}, \code{"pseudobulk"} or \code{"imputation"} indicating
+#' which specific \code{Sincast} assay to extract.
 #'
-#' @return An updated \code{Seurat} object with an additional \code{SincastAssays} object in the \code{misc} slot.
+#' @return Depending on the \code{assay} argument, can be either type of a \code{Sicast} assay,
+#' or a \code{SincastAssays} object containing both the types.
 #'
 #' @family SincastAssays related methods
 #'
 #' @export
-#' @rdname CreateSincastAssays
+#' @rdname GetSincastAssays
 #' @aliases Sincast, SincastAssays, Seurat
-setGeneric("CreateSincastAssays", function(object,
-                                           replace = FALSE, ...) {
-  standardGeneric("CreateSincastAssays")
+setGeneric("GetSincastAssays", function(object, assay = c("both", "pseudobulk", "imputation"), ...) {
+  standardGeneric("GetSincastAssays")
 })
 
-#' @rdname CreateSincastAssays
-setMethod("CreateSincastAssays", "Seurat", function(object,
-                                                    replace = FALSE) {
-  if (is.null(Seurat::Misc(object, slot = "SincastAssays"))) {
-    # Generate assays.
-    Seurat::Misc(object, slot = "SincastAssays") <- new("SincastAssays")
+#' @rdname GetSincastAssays
+setMethod("GetSincastAssays", "Seurat", function(object,
+                                                 assay = c("both", "pseudobulk", "imputation"), ...) {
+  # Check the validity of the "Sincast" object in "Seurat"'s misc slot.
+  test.SincastObject <- Sincast::CheckSincastObject(object, complete = TRUE)
 
-    # Generate tokens.
-    Seurat::Misc(object, slot = "SincastToken") <- GenerateSincastToken()
+  # If the "Sincast" object is missing, or invalid, return a NULL
+  if (any(test.SincastObject)) {
+    out <- NULL
   } else {
-    message(
-      "CreateSincastAssays: 'SincastAssays' object already exists. Check if it's valid."
-    )
+    assay <- match.arg(assay)
+    out <- Sincast::GetSincastObject(object)@SincastAssays
 
-    object <- CleanSincastAssays(object, remove.invalid = FALSE)
-
-    if (replace) {
-      message(
-        "CreateSincastAssays: replacing the existing 'SincastAssays' object."
-      )
-
-      suppressWarnings(
-        Seurat::Misc(object, slot = "SincastAssays") <- new("SincastAssays")
-      )
-    }else{
-      stop(
-        "A 'SincastAssays‘ object already exists, set replace = T to enforce a replacement,",
-        "or use 'CleanSincastAssays' function to replace a specific slot."
-      )
+    if (assay == "pseudobulk") {
+      out <- out@pseudobulk
+    } else {
+      out <- out@imputation
     }
   }
+
+  out
+})
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# GetSincastAssays<-
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' Setter function for \code{GetSincastAssays}.
+#'
+#' To be added.
+#'
+#' @param object A \code{Seurat} object.
+#' @param assay Either \code{"both"}, \code{"pseudobulk"} or \code{"imputation"} indicating
+#' which specific \code{Sincast} assay to be set.
+#'
+#' @return A \code{Seurat} object with updated \code{Sincast} assays.
+#'
+#' @family SincastAssays related methods
+#'
+#' @export
+#' @rdname GetSincastAssays
+#' @aliases Sincast, SincastAssays, Seurat
+setGeneric("GetSincastAssays<-", function(object,
+                                          assay = c("both", "pseudobulk", "imputation"), value, ...) {
+  standardGeneric("GetSincastAssays<-")
+})
+
+#' @rdname GetSincastAssays
+setMethod("GetSincastAssays<-", "Seurat", function(object,
+                                                 assay = c("both", "pseudobulk", "imputation"), value, ...) {
+  # Check the validity of the "Sincast" object in "Seurat"'s misc slot.
+  test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
+
+  assay <- match.arg(assay)
+  SincastObject <- Sincast::GetSincastObject(object)
+
+  if (assay == "both") {
+    SincastObject@SincastAssays <- value
+  } else if (assay == "pseudobulk") {
+    SincastObject@SincastAssays@pseudobulk <- value
+  } else if (assay == "imputation") {
+    SincastObject@SincastAssays@imputation <- value
+  }
+
+  GetSincastObject(object) <- SincastObject
 
   object
 })
@@ -133,17 +95,17 @@ setMethod("CreateSincastAssays", "Seurat", function(object,
 # CleanSincastAssays
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #' Remove unwanted or invalid elements (i.e, non-\code{Seurat} object) in \code{Sincast} assays
-#' \code{pseudobulk} and \code{imputation} embedded in \code{Seurat::MISC(object, slot = "SincastAssays")}.
+#' \code{pseudobulk} and \code{imputation} embedded in \code{Sincast} appended \code{Seurat} object.
 #'
 #' To be added.
 #'
-#' @param object A \code{Seurat} object with an additional \code{SincastAssays} object in the \code{misc} slot.
-#' @param clean.up Either "None", "All", "pseudobulk" or "imputation" indicating whether to clean up
+#' @param object A \code{Sincast} appended \code{Seurat} object.
+#' @param clean.up Either \code{"None"}, \code{"All"}, \code{"pseudobulk"} or \code{"imputation"} indicating whether to clean up
 #' the \code{SincastAssays} object or clean up a specific \code{Sincast} assay as proposed.
-#' @param remove.invalid Logical. Whether to check the validity of the existing \code{Sincast} assays and
+#' @param remove.invalid Logical; if TRUE, check the validity of the existing \code{Sincast} assays and
 #' remove invalid ones (e.g, \code{Seurat} objects not generated by \code{Sincast} functions).
 #'
-#' @return An updated \code{Seurat} object with an additional \code{SincastAssays} object in the \code{misc} slot.
+#' @return A \code{Seurat} object with updated \code{Sincast} assays.
 #'
 #' @family SincastAssays related methods
 #'
@@ -153,7 +115,7 @@ setMethod("CreateSincastAssays", "Seurat", function(object,
 setGeneric("CleanSincastAssays", function(object,
                                           remove.id.pseudobulk = NULL,
                                           remove.id.imputation = NULL,
-                                          clean.up = c("None", "All", "pseudobulk", "imputation"),
+                                          clean.up = c("none", "all", "pseudobulk", "imputation"),
                                           remove.invalid = TRUE,
                                           ...) {
   standardGeneric("CleanSincastAssays")
@@ -161,30 +123,40 @@ setGeneric("CleanSincastAssays", function(object,
 
 #' @rdname CleanSincastAssays
 setMethod("CleanSincastAssays", "Seurat", function(object,
-                                                   clean.up = c("None", "All", "pseudobulk", "imputation"),
-                                                   remove.invalid = TRUE) {
-  SincastAssays <- Seurat::Misc(object,
-    slot = "SincastAssays"
-  )
+                                                   clean.up = c("none", "all", "pseudobulk", "imputation"),
+                                                   remove.invalid = TRUE, ...) {
+  SincastObject <- Sincast::GetSincastObject(object)
+
   ret.summary <- FALSE
 
-  if (is.null(SincastAssays)) {
+  if (is.null(SincastObject)) {
     if (remove.invalid) {
       message(
-        "CleanSincastAssays: 'SincastAssays' object does not exists. Add a 'SincastAssays' object."
+        "CleanSincastAssays: Add (replace with) a new 'Sincast' object as 'remove.invalid' = TRUE."
       )
-      SincastAssays <- new("SincastAssays")
+      SincastObject <- Sincast::CreateSincastObject(
+        by = "CleanSincastAssays",
+        command = deparse(match.call())
+      )
     } else {
       message(
-        "CleanSincastAssays: 'SincastAssays' object does not exists."
+        "CleanSincastAssays: Set 'remove.invalid' = TRUE to add (replace with) a new 'Sincast' object."
       )
     }
-  } else if (is(SincastAssays, "SincastAssays")) {
+  } else {
+    SincastAssays <- SincastObject@SincastAssays
+    test.SincastAssays <- validObject(SincastAssays, test = T)
+    message(
+      "CleanSincastAssays: before clean up: ",
+      "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
+      "; 'imputation' assay: ", test.SincastAssays["imputation"]
+    )
+
     # Clean up a assay (assays)
     if (!is.null(clean.up)) {
       # Check the validity of clean.up
       clean.up <- match.arg(clean.up)
-      if (clean.up == "All") {
+      if (clean.up == "all") {
         SincastAssays <- new("SincastAssays")
       } else if (clean.up == "pseudobulk") {
         SincastAssays@pseudobulk <- NULL
@@ -193,81 +165,53 @@ setMethod("CleanSincastAssays", "Seurat", function(object,
       }
     }
 
-    # Check and remove invalid elements in Sincast assays.
-    test.result <- validObject(
-      SincastAssays,
-      test = T
-    )
-    all.valid <- TRUE
-    is.pseudobulk.valid <- test.result["pseudobulk"] == "Valid"
-    is.imputation.valid <- test.result["imputation"] == "valid"
+    # Check and remove invalid elements in "Sincast" assays.
+    test.SincastAssays <- validObject(SincastAssays, test = T)
+    is.pseudobulk.valid <- test.SincastAssays["pseudobulk"] %in% c("Valid","Empty")
+    is.imputation.valid <- test.SincastAssays["imputation"] %in% c("Valid","Empty")
 
-    if (is.pseudobulk.valid) {
+    # Clean up the "pseudobulk" assay
+    if (!is.pseudobulk.valid) {
       if (remove.invalid) {
         message(
-          "CleanSincastAssays: Remove invalid 'pseudobulk' assay."
+          "CleanSincastAssays: Remove invalid 'pseudobulk' assay  as 'remove.invalid' = TRUE."
         )
         SincastAssays@pseudobulk <- NULL
-        test.result["pseudobulk"]  <- "Empty"
+        test.SincastAssays["pseudobulk"] <- "Empty"
       } else {
         message(
-          "CleanSincastAssays: ", "the 'pseudobulk' assay is invalid. Consider replace it."
+          "CleanSincastAssays: ", "the 'pseudobulk' assay is invalid. Consider replace it by setting 'remove.invalid' = TRUE."
         )
       }
-      all.valid <- FALSE
     }
 
-    if (is.imputation.valid) {
+    # Clean up the "imputation" assay
+    if (!is.imputation.valid) {
       if (remove.invalid) {
         message(
-          "CleanSincastAssays: Remove invalid 'imputation' assay."
+          "CleanSincastAssays: Remove invalid 'imputation' assay as 'remove.invalid' = TRUE."
         )
         SincastAssays@imputation <- NULL
-        test.result["imputation"]  <- "Empty"
+        test.SincastAssays["imputation"] <- "Empty"
       } else {
         message(
-          "CleanSincastAssays: ", "the 'imputation' assay is invalid. Consider replace it."
+          "CleanSincastAssays: ", "the 'imputation' assay is invalid. Consider replace it by setting 'remove.invalid' = TRUE."
         )
       }
-      all.valid <- FALSE
     }
-    if (all.valid) {
-      message(
-        "CleanSincastAssays: Valid."
-      )
-    }
-    ret.summary <- TRUE
-  } else {
-    if (remove.invalid) {
-      message(
-        "CleanSincastAssays: Replacing an unknown 'SincastAssays' object."
-      )
-      SincastAssays <- new("SincastAssays")
-    } else {
-      message(
-        "CleanSincastAssays: There is an unknown ’SincastAssays‘ object. Consider replace it."
-      )
-    }
-  }
 
-  # Update the Sincast assay
-  suppressWarnings(Seurat::Misc(object, slot = "SincastAssays") <- SincastAssays)
-
-  # Update the Sincast token
-  SincastToken <- Seurat::Misc(object, slot = "SincastToken")
-  if (is.null(SincastToken)) {
-    SincastToken <- GenerateSincastToken()
-  } else if (!is(SincastToken, "SincastToken")) {
-    SincastToken <- GenerateSincastToken()
-  }
-  suppressWarnings(Seurat::Misc(object, slot = "SincastToken") <- SincastToken)
-
-  if (ret.summary) {
     message(
-      "CleanSincastAssays: 'pseudobulk' assay: ", test.result["pseudobulk"] ,
-      "; 'imputation' assay: ", test.result["imputation"]
+      "CleanSincastAssays: after clean up: ",
+      "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
+      "; 'imputation' assay: ", test.SincastAssays["imputation"]
     )
+
+    SincastObject@SincastAssays <- SincastAssays
   }
+
+  # Update the "Sincast" object
+  GetSincastObject(object) <- SincastObject
+
 
   object
 })

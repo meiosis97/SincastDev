@@ -73,7 +73,9 @@ setMethod("SincastAggregate", "Seurat", function(object,
   # Check the existence of the 'pseudobulk' assay.
   SincastAssays <- Seurat::Misc(object, slot = "SincastAssays")
   if(is.null(SincastAssays)){
-    SincastAssays <- Sincast::CreateSincastAssays(object)
+    SincastAssays <- new('SincastAssays')
+  }else{
+
   }
 
   if (is(SincastAssays, "SincastAssays")) {
