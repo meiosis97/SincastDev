@@ -11,3 +11,4 @@ GetSincastAssays(testobj, assay = 'pseudobulk') <- testdata
 CleanSincastAssays(testdata)@misc
 CleanSincastAssays(testobj)@misc
 CheckSincastObject(testobj, assay = 'pseudobulk')
+GetSincastObject(testdata)
