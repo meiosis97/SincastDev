@@ -25,6 +25,8 @@ To be added.
 Other Sincast related methods: 
 \code{\link{AddSincastObject}()},
 \code{\link{CreateSincastObject}()},
-\code{\link{Sincast-class}}
+\code{\link{Sincast-class}},
+\code{\link{SincastSeurat-class}},
+\code{\link{as.SincastSeurat}()}
 }
 \concept{Sincast related methods}

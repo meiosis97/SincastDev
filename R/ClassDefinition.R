@@ -86,7 +86,7 @@ setValidity(
         out <- "Empty"
       } else {
         SincastToken <- Seurat::Misc(assay, slot = "SincastToken")
-        if (!is(SincastToken, "SincastToken")) out <- "Sincast token is either missing or invalid"
+        if (!is(SincastToken, "SincastToken")) out <- "Sincast token is either missing or invalid."
       }
       out
     }
@@ -122,4 +122,30 @@ Sincast <- setClass(
     SincastAssays = "SincastAssays",
     SincastToken = "SincastToken"
   )
+)
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# SincastSeurat
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+NullSincast <- setClassUnion(
+  name = "NullSincast",
+  members = c("NULL", "Sincast")
+)
+
+#' An S4 class of \code{SincastSeurat} object, extended based on \code{Seurat}.
+#'
+#' To be added.
+#'
+#' @slot Sincast An S4 class of \code{Sincast} object.
+#'
+#' @family Sincast related methods
+#'
+#' @name SincastSeurat-class
+#' @rdname SincastSeurat-class
+#' @aliases Sincast, SincastAssays, Seurat
+SincastSeurat <- setClass(
+  Class = "SincastSeurat",
+  contains = "Seurat",
+  slot = list(Sincast = 'NullSincast')
 )

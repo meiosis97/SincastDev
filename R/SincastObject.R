@@ -127,17 +127,16 @@ setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
                                                    complete = TRUE, silent = FALSE, ...) {
 
   SincastObject <- Seurat::Misc(object, slot = "Sincast")
-  missing.object <- FALSE
-  wrong.class <- FALSE
   problem <- NULL
+  test.SincastObject <- "Valid"
   test.SincastAssays <- NULL
 
   if (is.null(SincastObject)) {
-    problem <- "'Sincast object' doesn't exist."
-    missing.object <- TRUE
+    problem <- "CheckSincastObject: Sincast object' doesn't exist."
+    test.SincastObject <- "Missing object"
   } else if (is(SincastObject, "SincastObject")) {
-    problem <- "Unrecroglized 'Sincast' object."
-    wrong.class <- TRUE
+    problem <- "CheckSincastObject: Unrecroglized 'Sincast' object."
+    test.SincastObject <- "Wrong class"
   } else if (complete) {
     test.SincastAssays <- validObject(SincastObject@SincastAssays, test = TRUE)
 
@@ -162,9 +161,8 @@ setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
     if (!test) strop(problem) else if (!silent) message(problem)
   }
 
-  out <- c(missing.object = missing.object, wrong.class = wrong.class)
-  attr(out, 'Sincastassays') <- test.SincastAssays
-  out
+  attr(test.SincastObject, 'Sincastassays') <- test.SincastAssays
+  test.SincastObject
 })
 
 
@@ -194,7 +192,7 @@ setMethod("GetSincastObject", "Seurat", function(object, ...) {
   test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
   # If the "Sincast" object is missing, or invalid, return a NULL
-  if (any(test.SincastObject)) {
+  if (test.SincastObject != "Valid") {
     out <- NULL
   } else {
     out <- Seurat::Misc(object, slot = "Sincast")
