@@ -22,9 +22,9 @@ To be added.
 }}
 
 \seealso{
-Other Sincast related methods: 
-\code{\link{AddSincastObject}()},
-\code{\link{CreateSincastObject}()},
-\code{\link{Sincast-class}}
+Other Sincast classes: 
+\code{\link{Sincast-class}},
+\code{\link{SincastAssays-class}},
+\code{\link{SincastSeurat-class}}
 }
-\concept{Sincast related methods}
+\concept{Sincast classes}

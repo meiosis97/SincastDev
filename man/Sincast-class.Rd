@@ -19,9 +19,9 @@ To be added.
 }}
 
 \seealso{
-Other Sincast related methods: 
-\code{\link{AddSincastObject}()},
-\code{\link{CreateSincastObject}()},
+Other Sincast classes: 
+\code{\link{SincastAssays-class}},
+\code{\link{SincastSeurat-class}},
 \code{\link{SincastToken-class}}
 }
-\concept{Sincast related methods}
+\concept{Sincast classes}

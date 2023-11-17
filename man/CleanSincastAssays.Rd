@@ -45,7 +45,6 @@ To be added.
 \seealso{
 Other SincastAssays related methods: 
 \code{\link{GetSincastAssays}()},
-\code{\link{SincastAggregate}()},
-\code{\link{SincastAssays-class}}
+\code{\link{SincastAggregate}()}
 }
 \concept{SincastAssays related methods}

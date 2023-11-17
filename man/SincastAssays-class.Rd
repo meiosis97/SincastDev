@@ -21,9 +21,9 @@ Validation of \code{SincastAssays} objects is handled by \code{\link[methods]{va
 }}
 
 \seealso{
-Other SincastAssays related methods: 
-\code{\link{CleanSincastAssays}()},
-\code{\link{GetSincastAssays}()},
-\code{\link{SincastAggregate}()}
+Other Sincast classes: 
+\code{\link{Sincast-class}},
+\code{\link{SincastSeurat-class}},
+\code{\link{SincastToken-class}}
 }
-\concept{SincastAssays related methods}
+\concept{Sincast classes}

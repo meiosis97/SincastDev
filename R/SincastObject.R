@@ -30,71 +30,6 @@ CreateSincastObject <- function(by = "CreateSincastObject", command = deparse(ma
   SincastObject
 }
 
-
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# AddSincastObject
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#' Add a \code{Sincast} object to \code{Seurat}'s \code{misc} slot.
-#'
-#' To be added.
-#'
-#' @param object A \code{Seurat} object.
-#' @param replace Logical; if \code{TRUE}, replace the existing \code{Sincast} object in the \code{misc} slot.
-#'
-#' @return An updated \code{Seurat} object with an additional \code{Sincast} object in the \code{misc} slot.
-#'
-#' @family Sincast related methods
-#'
-#' @export
-#' @rdname AddSincastObject
-#' @aliases Sincast, SincastAssays, Seurat
-setGeneric("AddSincastObject", function(object,
-                                        replace = FALSE, ...) {
-  standardGeneric("AddSincastObject")
-})
-
-#' @rdname AddSincastObject
-setMethod("AddSincastObject", "Seurat", function(object,
-                                                 replace = FALSE, ...) {
-  SincastObject <- Seurat::Misc(object, slot = "Sincast")
-
-  if (is.null(SincastObject)) {
-    # Generate a Sincast object,
-    SincastObject <- Sincast::CreateSincastObject(
-      by = "AddSincastObject",
-      command = deparse(match.call())
-    )
-  } else {
-    message(
-      "AddSincastObject: 'Sincast' object already exists. Check the validity of the existing object."
-    )
-    CheckSincastObject(object)
-
-    if (replace) {
-      message(
-        "AddSincastObject: Replacing the existing 'Sincast' object as replace = TRUE."
-      )
-      # Generate a Sincast object,
-      SincastObject <- Sincast::CreateSincastObject(
-        by = "AddSincastObject",
-        command = deparse(match.call())
-      )
-    } else {
-      message(
-        "AddSincastObject: A 'Sincast‘ object already exists, set 'replace = T' to enforce a replacement,",
-        "or use 'CleanSincastAssays' function to modify 'SincastAssays' specifically."
-      )
-    }
-  }
-
-  suppressWarnings(
-    Seurat::Misc(object, slot = "Sincast") <- SincastObject
-  )
-
-  object
-})
-
-
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # CheckSincastObject
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -125,19 +60,18 @@ setGeneric("CheckSincastObject", function(object, test = TRUE,
 #' @rdname CheckSincastObject
 setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
                                                    complete = TRUE, silent = FALSE, ...) {
-
-  SincastObject <- Seurat::Misc(object, slot = "Sincast")
-  missing.object <- FALSE
-  wrong.class <- FALSE
+  object <- as.SincastSeurat(object)
+  SincastObject <- object@Sincast
   problem <- NULL
+  test.SincastObject <- "Valid"
   test.SincastAssays <- NULL
 
   if (is.null(SincastObject)) {
-    problem <- "'Sincast object' doesn't exist."
-    missing.object <- TRUE
+    problem <- "CheckSincastObject: Sincast object' doesn't exist."
+    test.SincastObject <- "Missing object"
   } else if (is(SincastObject, "SincastObject")) {
-    problem <- "Unrecroglized 'Sincast' object."
-    wrong.class <- TRUE
+    problem <- "CheckSincastObject: Unrecroglized 'Sincast' object."
+    test.SincastObject <- "Wrong class"
   } else if (complete) {
     test.SincastAssays <- validObject(SincastObject@SincastAssays, test = TRUE)
 
@@ -162,9 +96,8 @@ setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
     if (!test) strop(problem) else if (!silent) message(problem)
   }
 
-  out <- c(missing.object = missing.object, wrong.class = wrong.class)
-  attr(out, 'Sincastassays') <- test.SincastAssays
-  out
+  attr(test.SincastObject, 'Sincastassays') <- test.SincastAssays
+  test.SincastObject
 })
 
 
@@ -194,7 +127,7 @@ setMethod("GetSincastObject", "Seurat", function(object, ...) {
   test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
   # If the "Sincast" object is missing, or invalid, return a NULL
-  if (any(test.SincastObject)) {
+  if (test.SincastObject != "Valid") {
     out <- NULL
   } else {
     out <- Seurat::Misc(object, slot = "Sincast")

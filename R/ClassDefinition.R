@@ -25,7 +25,7 @@
 #' @slot by A string recording the function by which this \code{Sincast} result was generated.
 #' @slot command A list recording \code{Sincast} command history.
 #'
-#' @family Sincast related methods
+#' @family Sincast classes
 #'
 #' @name SincastToken-class
 #' @rdname SincastToken-class
@@ -57,7 +57,7 @@ NullSeurat <- setClassUnion(
 #' @slot pseudobulk A list of \code{Seurat} object storing aggregated pseudobulk.
 #' @slot imputation A list of \code{Seurat} object storing imputed single cells.
 #'
-#' @family SincastAssays related methods
+#' @family Sincast classes
 #'
 #' @name SincastAssays-class
 #' @rdname SincastAssays-class
@@ -86,7 +86,7 @@ setValidity(
         out <- "Empty"
       } else {
         SincastToken <- Seurat::Misc(assay, slot = "SincastToken")
-        if (!is(SincastToken, "SincastToken")) out <- "Sincast token is either missing or invalid"
+        if (!is(SincastToken, "SincastToken")) out <- "Sincast token is either missing or invalid."
       }
       out
     }
@@ -111,7 +111,7 @@ setValidity(
 #' @slot SincastAssays A S4 class to store \code{Sincast} aggregation or imputation results.
 #' @slot SincastToken A S4 class to mark and time stamp the \code{Sincast} object.
 #'
-#' @family Sincast related methods
+#' @family Sincast classes
 #'
 #' @name Sincast-class
 #' @rdname Sincast-class
@@ -122,4 +122,29 @@ Sincast <- setClass(
     SincastAssays = "SincastAssays",
     SincastToken = "SincastToken"
   )
+)
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# SincastSeurat
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' An S4 class of \code{SincastSeurat} object, extended based on \code{Seurat}.
+#'
+#' Inherit all slots from a \code{Seurat} object (See \code{\link[Seurat]{Seurat-class}}),
+#' plus an additional slot \code{Sincast} storing a \code{Sincast}
+#' object (See \code{\link[Sincast]{Sincast-class}}).
+#'
+#' @slot Sincast An S4 class of \code{Sincast} object.
+#'
+#' @family Sincast classes
+#'
+#' @seealso [as.SincastSeurat()] for converting a \code{Seurat} object to \code{Sincast}.
+#'
+#' @name SincastSeurat-class
+#' @rdname SincastSeurat-class
+#' @aliases Sincast, Seurat
+SincastSeurat <- setClass(
+  Class = "SincastSeurat",
+  contains = "Seurat",
+  slot = list(Sincast = 'Sincast')
 )

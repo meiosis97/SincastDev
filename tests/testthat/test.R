@@ -12,3 +12,16 @@ CleanSincastAssays(testdata)@misc
 CleanSincastAssays(testobj)@misc
 CheckSincastObject(testobj, assay = 'pseudobulk')
 GetSincastObject(testdata)
+GetSincastAssays(testobj, assay = 'pseudobulk')
+testobj <- SincastAggregate(testobj, replace = T)
+GetSincastAssays(testobj, assay = 'pseudobulk')
+
+
+
+require(Sincast)
+testdata <- readRDS(file = 'C:/Users/yidid/SincastDev/data/testdata.rds')
+testdata <- as.SincastSeurat(testdata)
+testdata
+
+
+as(testdata, "SincastSeurat")

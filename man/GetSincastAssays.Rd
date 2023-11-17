@@ -38,12 +38,10 @@ To be added.
 \seealso{
 Other SincastAssays related methods: 
 \code{\link{CleanSincastAssays}()},
-\code{\link{SincastAggregate}()},
-\code{\link{SincastAssays-class}}
+\code{\link{SincastAggregate}()}
 
 Other SincastAssays related methods: 
 \code{\link{CleanSincastAssays}()},
-\code{\link{SincastAggregate}()},
-\code{\link{SincastAssays-class}}
+\code{\link{SincastAggregate}()}
 }
 \concept{SincastAssays related methods}

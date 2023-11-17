@@ -28,7 +28,7 @@ setMethod("GetSincastAssays", "Seurat", function(object,
   test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
   # If the "Sincast" object is missing, or invalid, return a NULL
-  if (any(test.SincastObject)) {
+  if (test.SincastObject != "Valid") {
     out <- NULL
   } else {
     assay <- match.arg(assay)
