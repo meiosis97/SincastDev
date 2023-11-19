@@ -17,8 +17,4 @@ A \code{SincastSeurat} object.
 \description{
 To be added.
 }
-\seealso{
-Other Sincast related methods: 
-\code{\link{CreateSincastObject}()}
-}
-\concept{Sincast related methods}
+\concept{SincastSeurat related methods}

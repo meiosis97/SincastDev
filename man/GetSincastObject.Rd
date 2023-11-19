@@ -3,7 +3,7 @@
 \name{GetSincastObject}
 \alias{GetSincastObject}
 \alias{Sincast,}
-\alias{SincastAssays,}
+\alias{SincastObject,}
 \alias{Seurat}
 \alias{GetSincastObject,Seurat-method}
 \alias{GetSincastObject<-}
@@ -33,9 +33,11 @@ To be added.
 }
 \seealso{
 Other SincastObject related methods: 
-\code{\link{CheckSincastObject}()}
+\code{\link{CheckSincastObject}()},
+\code{\link{CreateSincastObject}()}
 
 Other SincastObject related methods: 
-\code{\link{CheckSincastObject}()}
+\code{\link{CheckSincastObject}()},
+\code{\link{CreateSincastObject}()}
 }
 \concept{SincastObject related methods}

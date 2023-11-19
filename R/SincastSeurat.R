@@ -3,9 +3,7 @@
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # As("Seurat", "SincastSeurat")
 setAs("Seurat", "SincastSeurat", function(from, to) {
-  SincastObject <- CreateSincastObject(by = "as", command = deparse(match.call()))
   arguments <- paste(slotNames(from), "=from@", slotNames(from), sep = "", collapse = ",")
-  arguments <- paste(arguments, "Sincast=SincastObject", sep = ",")
   text2expr <- paste("SincastSeurat(", arguments, ")", sep = "")
   eval(parse(text = text2expr))
 })
@@ -30,7 +28,7 @@ setAs("SincastSeurat", "Seurat", function(from, to) {
 #'
 #' @return A \code{SincastSeurat} object.
 #'
-#' @family Sincast related methods
+#' @family SincastSeurat related methods
 #'
 #' @export
 #' @name as.SincastSeurat
@@ -52,4 +50,46 @@ setMethod("as.SincastSeurat", "Seurat", function(object, ...) {
 
   object
 
+})
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# show.SincastSeurat
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+setMethod("show", "SincastSeurat", function(object) {
+  # Convert Seurat show
+  out <- capture.output(as(object, "Seurat"))
+  out[1] <- "An object of class SincastSeurat"
+  out <- paste(out, collapse = "\n")
+
+
+  SincastAssays <- object@Sincast@SincastAssays
+  test.SincastAssays <- validObject(SincastAssays, test = "TRUE")
+
+  sparsity <-  1-mean(object$nFeature_RNA/nrow(object))
+  out <- paste(out,"\nSincast assay: Original data sparisty:", round(sparsity,3))
+
+  # Print information for "Sincast"'s "pseudobulk" assay.
+  if(test.SincastAssays["pseudobulk"] == "Valid"){
+    n.features <- nrow(SincastAssays@pseudobulk)
+    n.samples <- ncol(SincastAssays@pseudobulk)
+    sparsity <-  1-mean(SincastAssays@pseudobulk$nFeature_RNA/n.features)
+    out <- paste(out, "\n", " pseudobulk assay: (", n.features, " features, ",
+                 n.samples, " Samples, ", round(sparsity,3) , " sparsity)", sep = "")
+  }else{
+    out <- paste(out, "\n", " pseudobulk assay: (", test.SincastAssays["pseudobulk"], ")", sep = "")
+  }
+
+  # Print information for "Sincast"'s "imputation" assay.
+  if(test.SincastAssays["imputation"] == "Valid"){
+    n.features <- nrow(SincastAssays@imputation)
+    n.samples <- ncol(SincastAssays@imputation)
+    sparsity <-  1-mean(SincastAssays@imputation$nFeature_RNA/n.features)
+    out <- paste(out, "\n", " imputation assay: (", n.features, " features, ",
+                 n.samples, " Samples, ", round(sparsity,3) , " sparsity)", sep = "")
+  }else{
+    out <- paste(out, "\n", " imputation assay: (", test.SincastAssays["imputation"], ")", sep = "")
+  }
+
+  cat(out)
 })

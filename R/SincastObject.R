@@ -5,13 +5,16 @@
 #'
 #' To be added.
 #'
+#' @slot by A string recording the function by which \code{CreateSincastObject} was called.
+#' @slot command A string recording \code{Sincast} command history.
+#'
 #' @return An empty \code{Sincast} object.
 #'
-#' @family Sincast related methods
+#' @family SincastObject related methods
 #'
 #' @export
 #' @rdname CreateSincastObject
-#' @aliases Sincast, SincastAssays
+#' @aliases Sincast, SincastObject
 CreateSincastObject <- function(by = "CreateSincastObject", command = deparse(match.call())) {
   # Generate Sincast assays.
   SincastAssays <- new("SincastAssays")
@@ -51,7 +54,7 @@ CreateSincastObject <- function(by = "CreateSincastObject", command = deparse(ma
 #'
 #' @export
 #' @rdname CheckSincastObject
-#' @aliases Sincast, SincastAssays, Seurat
+#' @aliases Sincast, SincastObject, Seurat
 setGeneric("CheckSincastObject", function(object, test = TRUE,
                                           complete = TRUE, slient = FALSE, ...) {
   standardGeneric("CheckSincastObject")
@@ -60,14 +63,18 @@ setGeneric("CheckSincastObject", function(object, test = TRUE,
 #' @rdname CheckSincastObject
 setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
                                                    complete = TRUE, silent = FALSE, ...) {
-  object <- as.SincastSeurat(object)
-  SincastObject <- object@Sincast
+  if ("Sincast" %in% slotNames(object)) {
+    SincastObject <- object@Sincast
+  } else {
+    SincastObject <- NULL
+  }
+
   problem <- NULL
   test.SincastObject <- "Valid"
   test.SincastAssays <- NULL
 
   if (is.null(SincastObject)) {
-    problem <- "CheckSincastObject: Sincast object' doesn't exist."
+    problem <- "CheckSincastObject: 'Sincast' object doesn't exist."
     test.SincastObject <- "Missing object"
   } else if (is(SincastObject, "SincastObject")) {
     problem <- "CheckSincastObject: Unrecroglized 'Sincast' object."
@@ -81,14 +88,14 @@ setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
       )
     }
 
-    if(!all(test.SincastAssays %in% c("Valid", "Empty"))){
+    if (!all(test.SincastAssays %in% c("Valid", "Empty"))) {
       problem <- paste(
         "CheckSincastObject: Check 'SincastAssays': ",
         "\n \t 'pseudobulk' assay: ", test.SincastAssays["pseudobulk"],
-        "; 'imputation' assay: ", test.SincastAssays["imputation"], collapse = ''
+        "; 'imputation' assay: ", test.SincastAssays["imputation"],
+        collapse = ""
       )
     }
-
   }
 
   # Print error messages.
@@ -96,7 +103,7 @@ setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
     if (!test) strop(problem) else if (!silent) message(problem)
   }
 
-  attr(test.SincastObject, 'Sincastassays') <- test.SincastAssays
+  attr(test.SincastObject, "Sincastassays") <- test.SincastAssays
   test.SincastObject
 })
 
@@ -116,21 +123,21 @@ setMethod("CheckSincastObject", "Seurat", function(object, test = TRUE,
 #'
 #' @export
 #' @rdname GetSincastObject
-#' @aliases Sincast, SincastAssays, Seurat
+#' @aliases Sincast, SincastObject, Seurat
 setGeneric("GetSincastObject", function(object, ...) {
   standardGeneric("GetSincastObject")
 })
 
 #' @rdname GetSincastObject
 setMethod("GetSincastObject", "Seurat", function(object, ...) {
-  # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
+  # Check the validity of the "Sincast" object.
   test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
   # If the "Sincast" object is missing, or invalid, return a NULL
   if (test.SincastObject != "Valid") {
     out <- NULL
   } else {
-    out <- Seurat::Misc(object, slot = "Sincast")
+    out <- object@Sincast
   }
 
   out
@@ -152,14 +159,18 @@ setMethod("GetSincastObject", "Seurat", function(object, ...) {
 #'
 #' @export
 #' @rdname GetSincastObject
-#' @aliases Sincast, SincastAssays, Seurat
+#' @aliases Sincast, SincastObject, Seurat
 setGeneric("GetSincastObject<-", function(object, value, ...) {
   standardGeneric("GetSincastObject<-")
 })
 
 #' @rdname GetSincastObject
 setMethod("GetSincastObject<-", "Seurat", function(object, value, ...) {
-  suppressWarnings(Seurat::Misc(object, slot = "Sincast") <- value)
+  if (!"Sincast" %in% slotNames(object)) {
+    message("GetSincastObject: Convert to a SincastSeurat object.")
+    object <- as.SincastSeurat(object)
+  }
+  object@Sincast <- value
 
   object
 })

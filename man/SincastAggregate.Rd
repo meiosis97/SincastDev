@@ -73,9 +73,3 @@ A \code{Seurat} object with updated \code{Sincast pseudobulk} assay.
 \description{
 To be added.
 }
-\seealso{
-Other SincastAssays related methods: 
-\code{\link{CleanSincastAssays}()},
-\code{\link{GetSincastAssays}()}
-}
-\concept{SincastAssays related methods}

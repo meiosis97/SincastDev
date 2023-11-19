@@ -24,7 +24,7 @@ setGeneric("GetSincastAssays", function(object, assay = c("both", "pseudobulk", 
 #' @rdname GetSincastAssays
 setMethod("GetSincastAssays", "Seurat", function(object,
                                                  assay = c("both", "pseudobulk", "imputation"), ...) {
-  # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
+  # Check the validity of the "Sincast" object.
   test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
   # If the "Sincast" object is missing, or invalid, return a NULL
@@ -90,6 +90,11 @@ setGeneric("GetSincastAssays<-", function(object,
 #' @rdname GetSincastAssays
 setMethod("GetSincastAssays<-", "Seurat", function(object,
                                                  assay = c("both", "pseudobulk", "imputation"), value, ...) {
+  if (!"Sincast" %in% slotNames(object)) {
+    message("GetSincastObject: Convert to a SincastSeurat object.")
+    object <- as.SincastSeurat(object)
+  }
+
   # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
   Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
 
@@ -155,10 +160,9 @@ setMethod("CleanSincastAssays", "Seurat", function(object,
       message(
         "CleanSincastAssays: Add (replace with) a new 'Sincast' object as 'remove.invalid = TRUE'."
       )
-      SincastObject <- Sincast::CreateSincastObject(
-        by = "CleanSincastAssays",
-        command = deparse(match.call())
-      )
+      SincastObject <- Sincast::CreateSincastObject()
+      # Update the "Sincast" object
+      Sincast::GetSincastObject(object) <- SincastObject
     } else {
       message(
         "CleanSincastAssays: Set 'remove.invalid' = TRUE to add (replace with) a new 'Sincast' object."
@@ -228,11 +232,44 @@ setMethod("CleanSincastAssays", "Seurat", function(object,
     )
 
     SincastObject@SincastAssays <- SincastAssays
+    # Update the "Sincast" object
+    Sincast::GetSincastObject(object) <- SincastObject
   }
 
-  # Update the "Sincast" object
-  GetSincastObject(object) <- SincastObject
-
-
   object
+})
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# show.SincastSeurat
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+setMethod("show", "SincastAssays", function(object) {
+  SincastAssays <- object
+  test.SincastAssays <- validObject(SincastAssays, test = "TRUE")
+
+  out <- "\nSincast assay"
+
+  # Print information for "Sincast"'s "pseudobulk" assay.
+  if(test.SincastAssays["pseudobulk"] == "Valid"){
+    n.features <- nrow(SincastAssays@pseudobulk)
+    n.samples <- ncol(SincastAssays@pseudobulk)
+    sparsity <-  1-mean(SincastAssays@pseudobulk$nFeature_RNA/n.features)
+    out <- paste(out, "\n", " pseudobulk assay: (", n.features, " features, ",
+                 n.samples, " Samples, ", round(sparsity,3) , " sparsity)", sep = "")
+  }else{
+    out <- paste(out, "\n", " pseudobulk assay: (", test.SincastAssays["pseudobulk"], ")", sep = "")
+  }
+
+  # Print information for "Sincast"'s "imputation" assay.
+  if(test.SincastAssays["imputation"] == "Valid"){
+    n.features <- nrow(SincastAssays@imputation)
+    n.samples <- ncol(SincastAssays@imputation)
+    sparsity <-  1-mean(SincastAssays@imputation$nFeature_RNA/n.features)
+    out <- paste(out, "\n", " imputation assay: (", n.features, " features, ",
+                 n.samples, " Samples, ", round(sparsity,3) , " sparsity)", sep = "")
+  }else{
+    out <- paste(out, "\n", " imputation assay: (", test.SincastAssays["imputation"], ")", sep = "")
+  }
+
+  cat(out)
 })

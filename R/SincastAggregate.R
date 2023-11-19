@@ -37,8 +37,6 @@ generate.one.pseudo.bulk <- function(data, n.pool, aggregate.method) {
 #'
 #' @return A \code{Seurat} object with updated \code{Sincast pseudobulk} assay.
 #'
-#' @family SincastAssays related methods
-#'
 #' @export
 #' @rdname SincastAggregate
 #' @aliases Sincast, SincastAssays, Seurat
@@ -76,10 +74,7 @@ setMethod("SincastAggregate", "Seurat", function(object,
   # If the 'Sincast' object is missing or unrecognized, create an empty 'Sincast' object.
   if (test.SincastObject != "Valid") {
     message("SincastAggregate: Create an empty 'Sincsat' object.")
-    SincastObject <- Sincast::CreateSincastObject(
-      by = "SincastAggregate",
-      command = deparse(match.call())
-    )
+    SincastObject <- Sincast::CreateSincastObject()
   } else {
     SincastObject <- Sincast::GetSincastObject(object)
   }
@@ -203,14 +198,7 @@ setMethod("SincastAggregate", "Seurat", function(object,
   Sincast::GetSincastObject(object) <- SincastObject
 
   # Calculate sparsity
-  sparsity.before <- mean(
-    SeuratObject::LayerData(
-      object = object,
-      layer = layer,
-      assay = assay
-    ) == 0
-  )
-
+  sparsity.before <-  1-mean(object$nFeature_RNA/nrow(object))
   sparsity.after <- mean(out == 0)
 
   message(

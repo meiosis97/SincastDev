@@ -138,7 +138,7 @@ Sincast <- setClass(
 #'
 #' @family Sincast classes
 #'
-#' @seealso [as.SincastSeurat()] for converting a \code{Seurat} object to \code{Sincast}.
+#' @seealso \code{\link[Sincast]{as.SincastSeurat} for converting a \code{Seurat} object to \code{Sincast}.
 #'
 #' @name SincastSeurat-class
 #' @rdname SincastSeurat-class

@@ -19,7 +19,7 @@ object (See \code{\link[Sincast]{Sincast-class}}).
 }}
 
 \seealso{
-[as.SincastSeurat()] for converting a \code{Seurat} object to \code{Sincast}.
+
 
 Other Sincast classes: 
 \code{\link{Sincast-class}},

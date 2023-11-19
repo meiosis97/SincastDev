@@ -3,7 +3,7 @@
 \name{CreateSincastObject}
 \alias{CreateSincastObject}
 \alias{Sincast,}
-\alias{SincastAssays}
+\alias{SincastObject}
 \title{Create an empty \code{Sincast} object.}
 \usage{
 CreateSincastObject(
@@ -17,8 +17,17 @@ An empty \code{Sincast} object.
 \description{
 To be added.
 }
+\section{Slots}{
+
+\describe{
+\item{\code{by}}{A string recording the function by which \code{CreateSincastObject} was called.}
+
+\item{\code{command}}{A string recording \code{Sincast} command history.}
+}}
+
 \seealso{
-Other Sincast related methods: 
-\code{\link{as.SincastSeurat}()}
+Other SincastObject related methods: 
+\code{\link{CheckSincastObject}()},
+\code{\link{GetSincastObject}()}
 }
-\concept{Sincast related methods}
+\concept{SincastObject related methods}

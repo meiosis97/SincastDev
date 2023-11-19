@@ -3,7 +3,7 @@
 \name{CheckSincastObject}
 \alias{CheckSincastObject}
 \alias{Sincast,}
-\alias{SincastAssays,}
+\alias{SincastObject,}
 \alias{Seurat}
 \alias{CheckSincastObject,Seurat-method}
 \title{Check the validity of the \code{Sincast} object in \code{Seurat}'s \code{misc} slot.}
@@ -32,6 +32,7 @@ To be added.
 }
 \seealso{
 Other SincastObject related methods: 
+\code{\link{CreateSincastObject}()},
 \code{\link{GetSincastObject}()}
 }
 \concept{SincastObject related methods}

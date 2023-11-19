@@ -37,11 +37,9 @@ To be added.
 }
 \seealso{
 Other SincastAssays related methods: 
-\code{\link{CleanSincastAssays}()},
-\code{\link{SincastAggregate}()}
+\code{\link{CleanSincastAssays}()}
 
 Other SincastAssays related methods: 
-\code{\link{CleanSincastAssays}()},
-\code{\link{SincastAggregate}()}
+\code{\link{CleanSincastAssays}()}
 }
 \concept{SincastAssays related methods}
