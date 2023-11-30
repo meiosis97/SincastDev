@@ -1,0 +1,310 @@
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Not exported satellite functions
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+pdist <- function(tmat) {
+  # @param tmat A non-negative matrix with samples by features
+  # @reference http://r.789695.n4.nabble.com/dist-function-in-R-is-very-slow-td4738317.html
+  mtm <- Matrix::tcrossprod(tmat)
+  sq <- rowSums(tmat^2)
+  out0 <- outer(sq, sq, "+") - 2 * mtm
+  out0[out0 < 0] <- 0
+
+  sqrt(out0)
+}
+
+
+ScaleDistance <- function(dist) {
+  for (i in 1:nrow(dist)) {
+    r <- sort(dist[i, ], partial = 2)[2]
+    dist[i, ] <- dist[i, ] - r
+    dist[i, ][dist[i, ] <= 0] <- 0
+  }
+  dist
+}
+
+
+Symmetrization <- function(aff, norm) {
+  if (norm == "probabilistic") {
+    aff <- aff + t(aff) - aff * t(aff)
+  }
+
+  if (norm == "average") {
+    aff <- (aff + t(aff)) / 2
+  }
+  aff
+}
+
+
+Laplacian <- function(aff) {
+  Z <- rowSums(aff)
+  Z.mat <- tcrossprod(Z)
+  aff <- aff / Z.mat
+}
+
+
+MedianScale <- function(X, Y) {
+  scale.factor <- apply(X, 1, function(x) median(x[x != 0])) /
+    apply(replace(Y, X == 0, NA), 1, function(y) median(y, na.rm = T))
+  Y <- Y * scale.factor
+  Y[is.na(Y)] <- 0
+  Y
+}
+
+
+FindSigma <- function(dk, a, k) {
+  lower <- 0
+  upper <- Inf
+  cur <- dk[k]
+  while (T) {
+    psum <- sum(exp(-0.5 * (dk / cur)^2))
+    if (psum > a) {
+      upper <- cur
+      cur <- (lower + cur) / 2
+    } else if (psum < a) {
+      if (is.infinite(upper)) {
+        lower <- cur
+        cur <- 2 * cur
+      } else {
+        lower <- cur
+        cur <- (upper + cur) / 2
+      }
+    }
+    if (abs(psum - a) < 1e-5) break
+  }
+  cur
+}
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Exported
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' Sincast imputation
+#'
+#' Perform Sincast imputation.
+#'
+#' @param object A \code{Sincast} object
+#' @param assay Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.
+#' @param features Features to impute. Default is all features in the assay.
+#' @param npcs How many principal components to compute on the query data. The PCs will be used to construct the knn graph.
+#' @param t Diffusion time, or the power of Markov transition matrix.
+#' @param k The number of neighbors used to infer adaptive Gaussian kernel for each cell.
+#' @param knn A cell can only be connected to knn neighbors when t is set 1.
+#' @param do.umap.dist Logical: if TRUE, scale Euclidean distances to distances beyond nearest neighbors as in the UMAP algorithm.
+#' @param a Default: log2(k) and log(k/(k-1)) when setting umap.dist to TRUE and FALSE respectively.
+#'        a < 1 represents the probability of a cell communicating with its kth nearest neighbor.
+#'        a > 1 represents the sum of probabilities of a cell communicating with its k nearest neighbors.
+#' @param do.laplacian Logical: if TRUE, perform Laplacian normalization on the affinity matrix.
+#' @param norm How to symmetrize the affinity matrix. Default is Probabilistic t-norm. The other option is 'average'.
+#'
+#' @return A \code{Sincast} object with updated \code{imputation} assay.
+#'
+#' @seealso [SincastAggregate()]
+#'
+#' @export
+#' @name SincastImpute
+#' @rdname SincastImpute
+#' @aliases Sincast, SincastAssays
+setGeneric("SincastImpute", function(object,
+                                     assay = NULL,
+                                     features = NULL,
+                                     npcs = NULL,
+                                     t = 3,
+                                     k = 30,
+                                     knn = NULL,
+                                     do.umap.dist = TRUE,
+                                     a = NULL,
+                                     do.laplacian = TRUE,
+                                     norm = c("probabilistic", "average"), ...) {
+  standardGeneric("SincastImpute")
+})
+
+
+
+#' @name SincastImpute
+#' @rdname SincastImpute
+setMethod("SincastImpute", "Sincast", function(object,
+                                               assay = NULL,
+                                               features = NULL,
+                                               npcs = NULL,
+                                               t = 3,
+                                               k = 30,
+                                               knn = NULL,
+                                               do.umap.dist = TRUE,
+                                               a = NULL,
+                                               do.laplacian = TRUE,
+                                               norm = c("probabilistic", "average"), ...) {
+  # Check the validity of the Sincast object.
+  Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
+
+  # If a imputation assay already exists, either replace it or return an error.
+  if (!is.null(
+    Sincast::GetSincastAssays(object, assay = "imputation")
+  )) {
+    if (!replace) {
+      stop(
+        "SincastImpute: An imputation assay already exists, set replace = T to enforce a replacement."
+      )
+    } else {
+      message("SincastImpute: An imputation assay already exists. Will be replaced as 'replace = T'.")
+    }
+  }
+
+  # Get the original Seurat object.
+  original <- Sincast::GetSincastAssays(object, assay = "original")
+
+  # Get the default assay.
+  if (is.null(assay)) {
+    assay <- Seurat::DefaultAssay(original)
+  } else {
+    Seurat::DefaultAssay(original) <- assay
+  }
+
+  # Check norm format.
+  norm <- match.arg(norm)
+
+  # Check whether PCA has been run on the original Seurat object.
+  if (!"pca" %in% Reductions(original)) {
+    stop("pca not found in the original Seurat object.")
+  }
+
+  # Get pcs.
+  pcs <- original@reductions$pca@cell.embeddings
+  cells <- rownames(pcs)
+  if (!is.null(npcs)) {
+    pcs <- pcs[, 1:npcs]
+  }
+  message("Ready to impute ", length(cells), " cells that are stored in ", assay, " pca.")
+
+  # Subset the original Seurat object.
+  original <- original[, cells]
+  if (!is.null(features)) original <- original[features, ]
+
+  # Construct affinity matrix.
+  message("Now construct affinity matrix.")
+  message("\t Calcualting distance.")
+  dist <- pdist(pcs)
+
+  # Adjust bandwidth.
+  if (is.null(a)) {
+    if (do.umap.dist) a <- log2(k) else a <- log(k / (k - 1))
+  }
+  if (is.null(knn)) knn <- k
+
+  message("\t Scaling distance.")
+  if (do.umap.dist) dist <- ScaleDistance(dist)
+
+  message("\t Calculating band width")
+  sigma <- c()
+  for (i in 1:length(cells)) {
+    dk <- sort(dist[i, ])[2:(k + 1)]
+    if (a < 1) {
+      sigma[i] <- dk[k] / sqrt(-2 * log(a))
+    } else if (a > 1) {
+      sigma[i] <- FindSigma(dk, a, k)
+    } else {
+      sigma[i] <- Inf
+    }
+  }
+  names(sigma) <- cells
+
+  message("\t Calculating affinities.")
+  aff <- exp(-0.5 * (dist / sigma)^2)
+  for (i in 1:length(cells)) aff[i, ][rank(-aff[i, ]) > knn] <- 0
+  aff <- Matrix::Matrix(aff)
+
+  message("\t Symmetrization.")
+  aff <- Symmetrization(aff, norm = norm)
+
+  # Laplacian normalization
+  if (do.laplacian) {
+    message("\t Laplacian normalization.")
+    aff <- Laplacian(aff)
+  }
+  message("Construct affinity matrix: Done.")
+
+  message("Now impute.")
+  message("\t Constructing diffusion operator.")
+  p <- aff / rowSums(aff)
+
+  message("\t Diffusing.")
+  out <- SeuratObject::GetAssayData(
+    object = original,
+    layer = "data"
+  )
+
+  for (i in 1:t) {
+    out <- tcrossprod(out, t(p))
+  }
+
+  message("\t Scaling.")
+  out <- MedianScale(
+    SeuratObject::GetAssayData(
+      object = original,
+      layer = "data"
+    ), out
+  )
+  message("Finish impute")
+
+  # Get metadata.
+  meta.data <- original@meta.data
+
+  # Calculate sparsity
+  sparsity.before <- mean(
+    SeuratObject::GetAssayData(
+      object = original,
+      layer = "data"
+    ) == 0
+  )
+  sparsity.after <- mean(out == 0)
+
+  # Generate a token for the original data.
+  if (is.null(
+    Seurat::Misc(original, slot = "SincastToken")
+  )) {
+    SincastToken <- GenerateSincastToken()
+    Seurat::Misc(
+      Sincast::GetSincastAssays(object, assay = "original"),
+      slot = "SincastToken"
+    ) <- SincastToken
+  } else {
+    SincastToken <- Seurat::Misc(original, slot = "SincastToken")
+  }
+
+  # Generate a token for this imputation run.
+  SincastToken <- GenerateSincastToken(
+    by = "SincastImpute",
+    command = deparse(match.call()),
+    extend = SincastToken@command
+  )
+
+  # Create a new Seurat object to store the result.
+  suppressWarnings(
+    out <- Seurat::CreateSeuratObject(
+      counts = Matrix::Matrix(out),
+      assay = assay,
+      meta.data = meta.data,
+      project = SincastToken@id, ...
+    )
+  )
+  Seurat::Idents(out) <- Seurat::Idents(original)
+
+  # Write the summary information
+  object@summary@summary["imputation", ] <- c(
+    assay, "data", nrow(out), ncol(out),
+    NA, round(sparsity.before, 3), round(sparsity.after, 3)
+  )
+  SincastToken@summary <- object@summary@summary["imputation", ]
+
+  # Add token to the new Seurat object,
+  Seurat::Misc(out, slot = "SincastToken") <- SincastToken
+
+  # Add or replace the imputation assay by the new Seurat object.
+  Sincast::GetSincastAssays(object, assay = "imputation") <- out
+
+  message(
+    "SincastImpute: Sparsity before imputation: ", round(sparsity.before, 3),
+    "; After imputation: ", round(sparsity.after, 3)
+  )
+
+  object
+})

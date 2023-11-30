@@ -15,13 +15,13 @@ To be added.
 \describe{
 \item{\code{SincastAssays}}{A S4 class to store \code{Sincast} aggregation or imputation results.}
 
-\item{\code{SincastToken}}{A S4 class to mark and time stamp the \code{Sincast} object.}
+\item{\code{Summary}}{A \code{SincastSummary} object.}
 }}
 
 \seealso{
 Other Sincast classes: 
 \code{\link{SincastAssays-class}},
-\code{\link{SincastSeurat-class}},
+\code{\link{SincastSummary-class}},
 \code{\link{SincastToken-class}}
 }
 \concept{Sincast classes}

@@ -1,24 +1,12 @@
 library("Sincast")
 testdata <- readRDS(file = 'C:/Users/yidid/SincastDev/data/testdata.rds')
-testobj <- as.SincastSeurat(testdata)
-testobj@misc
-GetSincastObject(testobj)
-GetSincastAssays(testobj)
+testobj <- as.Sincast(testdata)
 CheckSincastObject(testobj)
-CleanSincastAssays(testobj)
-
-
-GetSincastAssays(testobj, assay = 'pseudobulk') <- testdata
-CleanSincastAssays(testdata)@Sincast
-CleanSincastAssays(testobj)@Sincast
-CheckSincastObject(testobj, assay = 'pseudobulk')
-GetSincastObject(testdata)
+CheckSincastAssays(testobj@SincastAssays)
+GetSincastAssays(testobj, "original")
 GetSincastAssays(testobj)
-testobj <- SincastAggregate(testobj, replace = T)
-GetSincastAssays(testobj, assay = 'pseudobulk')@misc
-
-
-
-
-testobj
-
+CleanSincastAssays(testobj)
+GetSincastAssays(testobj, assay = 'pseudobulk') <- testdata
+testobj <- SincastAggregate(testobj, replace = T, size.factor = 10)
+testobj <- SincastImpute(testobj)
+testobj@SincastAssays@pseudobulk@misc

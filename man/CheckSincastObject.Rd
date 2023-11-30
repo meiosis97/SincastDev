@@ -3,17 +3,16 @@
 \name{CheckSincastObject}
 \alias{CheckSincastObject}
 \alias{Sincast,}
-\alias{SincastObject,}
-\alias{Seurat}
-\alias{CheckSincastObject,Seurat-method}
-\title{Check the validity of the \code{Sincast} object in \code{Seurat}'s \code{misc} slot.}
+\alias{SincastObject}
+\alias{CheckSincastObject,Sincast-method}
+\title{Check the validity of the \code{Sincast} object.}
 \usage{
 CheckSincastObject(object, test = TRUE, complete = TRUE, slient = FALSE, ...)
 
-\S4method{CheckSincastObject}{Seurat}(object, test = TRUE, complete = TRUE, silent = FALSE, ...)
+\S4method{CheckSincastObject}{Sincast}(object, test = TRUE, complete = TRUE, silent = FALSE, ...)
 }
 \arguments{
-\item{object}{A \code{Seurat} object.}
+\item{object}{A \code{Sincast} object.}
 
 \item{test}{Logical; if TRUE (the default) and validity fails, the function returns a
 vector of strings describing the problems. If test is FALSE validity failure generates an error.}
@@ -24,15 +23,13 @@ existing \code{Sincast} object.}
 \item{silent}{Logical; if TRUE, suppress all messages.}
 }
 \value{
-Logical indicates whether \code{Seurat}'s \code{misc} slot
-contains a valid \code{Sincast} object.
+A vector of strings describing the problems.
 }
 \description{
 To be added.
 }
 \seealso{
 Other SincastObject related methods: 
-\code{\link{CreateSincastObject}()},
-\code{\link{GetSincastObject}()}
+\code{\link{as.Sincast}()}
 }
 \concept{SincastObject related methods}

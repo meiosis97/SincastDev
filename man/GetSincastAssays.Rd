@@ -3,32 +3,46 @@
 \name{GetSincastAssays}
 \alias{GetSincastAssays}
 \alias{Sincast,}
-\alias{SincastAssays,}
-\alias{Seurat}
-\alias{GetSincastAssays,Seurat-method}
-\alias{GetSincastAssays<-}
-\alias{GetSincastAssays<-,Seurat-method}
-\title{Extract the \code{SincastAssays} object from a \code{Sincast} appended \code{Seurat} object.}
+\alias{SincastAssays}
+\alias{GetSincastAssays,Sincast-method}
+\alias{GetSincastAssays<-,Sincast-method}
+\title{Extract the \code{SincastAssays} object from a \code{Sincast} object.}
 \usage{
-GetSincastAssays(object, assay = c("both", "pseudobulk", "imputation"), ...)
+GetSincastAssays(
+  object,
+  assay = c("all", "original", "pseudobulk", "imputation"),
+  ...
+)
 
-\S4method{GetSincastAssays}{Seurat}(object, assay = c("both", "pseudobulk", "imputation"), ...)
+\S4method{GetSincastAssays}{Sincast}(
+  object,
+  assay = c("all", "original", "pseudobulk", "imputation"),
+  ...
+)
 
-GetSincastAssays(object, assay = c("both", "pseudobulk", "imputation"), ...) <- value
+GetSincastAssays(
+  object,
+  assay = c("all", "original", "pseudobulk", "imputation"),
+  ...
+) <- value
 
-\S4method{GetSincastAssays}{Seurat}(object, assay = c("both", "pseudobulk", "imputation"), ...) <- value
+\S4method{GetSincastAssays}{Sincast}(
+  object,
+  assay = c("all", "original", "pseudobulk", "imputation"),
+  ...
+) <- value
 }
 \arguments{
-\item{object}{A \code{Seurat} object.}
+\item{object}{A \code{Sincast} object.}
 
-\item{assay}{Either \code{"both"}, \code{"pseudobulk"} or \code{"imputation"} indicating
-which specific \code{Sincast} assay to be set.}
+\item{assay}{Either \code{"all"}, \code{"original"}, \code{"pseudobulk"} or
+\code{"imputation"} indicating which specific \code{Sincast} assay to modify.}
 }
 \value{
 Depending on the \code{assay} argument, can be either type of a \code{Sicast} assay,
-or a \code{SincastAssays} object containing both the types.
+or a \code{SincastAssays} object containing all the types.
 
-A \code{Seurat} object with updated \code{Sincast} assays.
+A \code{Sincast} object with updated \code{Sincast} assays.
 }
 \description{
 To be added.
@@ -37,9 +51,11 @@ To be added.
 }
 \seealso{
 Other SincastAssays related methods: 
+\code{\link{CheckSincastAssays}()},
 \code{\link{CleanSincastAssays}()}
 
 Other SincastAssays related methods: 
+\code{\link{CheckSincastAssays}()},
 \code{\link{CleanSincastAssays}()}
 }
 \concept{SincastAssays related methods}
