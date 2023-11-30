@@ -51,7 +51,7 @@ setGeneric("SincastAggregate", function(object,
                                         n.pool = 15,
                                         size.factor = 1,
                                         pool.factor = NULL,
-                                        sep = ".", replace = c("None", "All", "invalid"), ...) {
+                                        sep = ".", replace = FALSE, ...) {
   standardGeneric("SincastAggregate")
 })
 
@@ -68,6 +68,7 @@ setMethod("SincastAggregate", "Seurat", function(object,
                                                  size.factor = 1,
                                                  pool.factor = NULL,
                                                  sep = ".", replace = FALSE, ...) {
+
   # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
   test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
 
@@ -104,10 +105,11 @@ setMethod("SincastAggregate", "Seurat", function(object,
     assay <- Seurat::DefaultAssay(object)
   }
 
-  # Get default features to aggregate.
-  if (is.null(features)) {
-    features <- rownames(object[[assay]])
-  }
+  # Get features to aggregate.
+  if(!is.null(features)) object <- object[features, ]
+
+  # Get cells to aggregate.
+  if(!is.null(cells)) object <- object[,cells]
 
   # Get default group.
   if (group.by == "ident") {

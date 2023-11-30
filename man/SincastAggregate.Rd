@@ -21,7 +21,7 @@ SincastAggregate(
   size.factor = 1,
   pool.factor = NULL,
   sep = ".",
-  replace = c("None", "All", "invalid"),
+  replace = FALSE,
   ...
 )
 

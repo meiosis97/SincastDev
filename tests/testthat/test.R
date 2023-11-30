@@ -20,5 +20,5 @@ GetSincastAssays(testobj, assay = 'pseudobulk')@misc
 
 
 
-testobj
+testobj[1:100,]
 
