@@ -3,9 +3,7 @@
 \name{SincastAggregate}
 \alias{SincastAggregate}
 \alias{Sincast,}
-\alias{SincastAssays,}
-\alias{Seurat}
-\alias{SincastAggregate,Seurat-method}
+\alias{SincastAssays}
 \title{Aggregate single cells to generate pseudobulk samples.}
 \usage{
 SincastAggregate(
@@ -25,7 +23,7 @@ SincastAggregate(
   ...
 )
 
-\S4method{SincastAggregate}{Seurat}(
+\S4method{SincastAggregate}{Sincast}(
   object,
   assay = NULL,
   layer = "counts",
@@ -43,15 +41,13 @@ SincastAggregate(
 )
 }
 \arguments{
-\item{object}{A \code{Seurat} object}
+\item{object}{A \code{Sincast} object}
 
-\item{assay}{To be added.}
+\item{assay}{Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.}
 
-\item{layer}{To be added.}
+\item{layer}{Which \code{Seurat} layer to use. Default is the \code{counts} layer.}
 
-\item{cells}{To be added.}
-
-\item{features}{To be added.}
+\item{features}{Features to analyze. Default is all features in the assay.}
 
 \item{group.by}{To be added.}
 
@@ -65,11 +61,14 @@ SincastAggregate(
 
 \item{sep}{To be added.}
 
-\item{replace}{Whether to replace the existing 'pseudobulk' assay.}
+\item{replace}{Whether to replace the existing \code{pseudobulk} assay.}
 }
 \value{
-A \code{Seurat} object with updated \code{Sincast pseudobulk} assay.
+A \code{Sincast} object with updated \code{pseudobulk} assay.
 }
 \description{
-To be added.
+Perform \code{Sincast} aggregation.
+}
+\seealso{
+[SincastImpute()]
 }

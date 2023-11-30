@@ -1,19 +1,4 @@
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Sincast object, could be used
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Sincast <- setClass(
-#   Class = "Sincast",
-#   contains = "Seurat"
-# )
-#
-# setAs("Seurat", "Sincast", function(from, to) {
-#   arguments <- paste(slotNames(from), "=from@", slotNames(from), sep = "", collapse = ",")
-#   text2expr <- paste("Sincast(", arguments, ")", sep = "")
-#   eval(parse(text = text2expr))
-# })
-
-
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # SincastToken
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #' An S4 class of \code{SincastToken} object.
@@ -24,6 +9,7 @@
 #' @slot timestamp A string recording the time at which the result was generated.
 #' @slot by A string recording the function by which this \code{Sincast} result was generated.
 #' @slot command A list recording \code{Sincast} command history.
+#' @slot summary A one row \code{data.frame} storing summary information.
 #'
 #' @family Sincast classes
 #'
@@ -36,26 +22,75 @@ SincastToken <- setClass(
     id = "character",
     timestamp = "character",
     by = "character",
-    command = 'list'
+    command = "list",
+    summary = "data.frame"
   )
+)
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# SincastSummary
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' An S4 class of \code{SincastSummary} object.
+#'
+#' To be added.
+#'
+#' @slot summary A \code{data.frame} summarize \code{Sincast} results.
+#'
+#' @family Sincast classes
+#'
+#' @name SincastSummary-class
+#' @rdname SincastSummary-class
+#' @aliases Sincast
+SincastSummary <- setClass(
+  Class = "SincastSummary",
+  slots = list(
+    summary = "data.frame"
+  )
+)
+
+#' SincastSummary Object Validity
+#'
+#' Validation of \code{SincastSummary} objects is handled by \code{\link[methods]{validObject}}.
+#'
+#' @name SincastSummary-validity
+#' @rdname SincastSummary-class
+#' @aliases Sincast, SincastSummary
+setValidity(
+  Class = "SincastSummary",
+  method = function(object) {
+    out <- TRUE
+
+    if (any(rownames(object@summary) != c(
+      "pseudobulk", "imputation",
+      "original.atlas", "pseudobulk.atlas",
+      "imputation.atlas"
+    ))) {
+      out <- "SincastSummary not in a correct format"
+    }
+
+    if (any(colnames(object@summary) != c(
+      "assay", "layer", "nfeatures",
+      "nsamples", "ncomponents",
+      "sparsity.before", "sparsity.after"
+    ))) {
+      out <- "SincastSummary not in a correct format"
+    }
+    out
+  }
 )
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # SincastAssays
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-NullSeurat <- setClassUnion(
-  name = "NullSeurat",
-  members = c("NULL", "Seurat")
-)
-
-
 #' A S4 class to store \code{Sincast} aggregation or imputation results.
 #'
 #' To be added.
 #'
-#' @slot pseudobulk A list of \code{Seurat} object storing aggregated pseudobulk.
-#' @slot imputation A list of \code{Seurat} object storing imputed single cells.
+#' @slot original A \code{Seurat} object storing the original single cell data.
+#' @slot pseudobulk A \code{Seurat} object storing aggregated pseudobulk.
+#' @slot imputation A \code{Seurat} object storing imputed single cells.
 #'
 #' @family Sincast classes
 #'
@@ -65,39 +100,10 @@ NullSeurat <- setClassUnion(
 SincastAssays <- setClass(
   Class = "SincastAssays",
   slots = list(
-    pseudobulk = "NullSeurat",
-    imputation = "NullSeurat"
+    original = "Seurat",
+    pseudobulk = "ANY",
+    imputation = "ANY"
   )
-)
-
-#' SincastAssays Object Validity
-#'
-#' Validation of \code{SincastAssays} objects is handled by \code{\link[methods]{validObject}}.
-#'
-#' @name SincastAssays-validity
-#' @rdname SincastAssays-class
-#' @aliases Sincast, SincastAssays
-setValidity(
-  Class = "SincastAssays",
-  method = function(object) {
-    test <- function(assay) {
-      out <- "Valid"
-      if (is.null(assay)) {
-        out <- "Empty"
-      } else {
-        SincastToken <- Seurat::Misc(assay, slot = "SincastToken")
-        if (!is(SincastToken, "SincastToken")) out <- "Sincast token is either missing or invalid."
-      }
-      out
-    }
-
-    test.result <- c(pseudobulk = "Valid", imputation = "Valid")
-    test.result["pseudobulk"] <- test(object@pseudobulk)
-    test.result["imputation"] <- test(object@imputation)
-
-
-    test.result
-  }
 )
 
 
@@ -109,7 +115,7 @@ setValidity(
 #' To be added.
 #'
 #' @slot SincastAssays A S4 class to store \code{Sincast} aggregation or imputation results.
-#' @slot SincastToken A S4 class to mark and time stamp the \code{Sincast} object.
+#' @slot Summary A \code{SincastSummary} object.
 #'
 #' @family Sincast classes
 #'
@@ -120,31 +126,6 @@ Sincast <- setClass(
   Class = "Sincast",
   slots = list(
     SincastAssays = "SincastAssays",
-    SincastToken = "SincastToken"
+    summary = "SincastSummary"
   )
-)
-
-
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# SincastSeurat
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#' An S4 class of \code{SincastSeurat} object, extended based on \code{Seurat}.
-#'
-#' Inherit all slots from a \code{Seurat} object (See \code{\link[Seurat]{Seurat-class}}),
-#' plus an additional slot \code{Sincast} storing a \code{Sincast}
-#' object (See \code{\link[Sincast]{Sincast-class}}).
-#'
-#' @slot Sincast An S4 class of \code{Sincast} object.
-#'
-#' @family Sincast classes
-#'
-#' @seealso \code{\link[Sincast]{as.SincastSeurat} for converting a \code{Seurat} object to \code{Sincast}.
-#'
-#' @name SincastSeurat-class
-#' @rdname SincastSeurat-class
-#' @aliases Sincast, Seurat
-SincastSeurat <- setClass(
-  Class = "SincastSeurat",
-  contains = "Seurat",
-  slot = list(Sincast = 'Sincast')
 )

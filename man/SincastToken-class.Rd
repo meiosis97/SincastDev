@@ -19,12 +19,14 @@ To be added.
 \item{\code{by}}{A string recording the function by which this \code{Sincast} result was generated.}
 
 \item{\code{command}}{A list recording \code{Sincast} command history.}
+
+\item{\code{summary}}{A one row \code{data.frame} storing summary information.}
 }}
 
 \seealso{
 Other Sincast classes: 
 \code{\link{Sincast-class}},
 \code{\link{SincastAssays-class}},
-\code{\link{SincastSeurat-class}}
+\code{\link{SincastSummary-class}}
 }
 \concept{Sincast classes}

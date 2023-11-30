@@ -5,25 +5,24 @@
 \alias{SincastAssays-class}
 \alias{SincastAssays}
 \alias{Sincast,}
-\alias{SincastAssays-validity}
 \title{A S4 class to store \code{Sincast} aggregation or imputation results.}
 \description{
 To be added.
-
-Validation of \code{SincastAssays} objects is handled by \code{\link[methods]{validObject}}.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{pseudobulk}}{A list of \code{Seurat} object storing aggregated pseudobulk.}
+\item{\code{original}}{A \code{Seurat} object storing the original single cell data.}
 
-\item{\code{imputation}}{A list of \code{Seurat} object storing imputed single cells.}
+\item{\code{pseudobulk}}{A \code{Seurat} object storing aggregated pseudobulk.}
+
+\item{\code{imputation}}{A \code{Seurat} object storing imputed single cells.}
 }}
 
 \seealso{
 Other Sincast classes: 
 \code{\link{Sincast-class}},
-\code{\link{SincastSeurat-class}},
+\code{\link{SincastSummary-class}},
 \code{\link{SincastToken-class}}
 }
 \concept{Sincast classes}
