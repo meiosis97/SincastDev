@@ -82,23 +82,29 @@ FindSigma <- function(dk, a, k) {
 #'
 #' Perform Sincast imputation.
 #'
-#' @param object A \code{Sincast} object
+#' @param object A \code{Sincast} object.
 #' @param assay Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.
 #' @param features Features to impute. Default is all features in the assay.
 #' @param npcs How many principal components to compute on the query data. The PCs will be used to construct the knn graph.
 #' @param t Diffusion time, or the power of Markov transition matrix.
 #' @param k The number of neighbors used to infer adaptive Gaussian kernel for each cell.
 #' @param knn A cell can only be connected to knn neighbors when t is set 1.
-#' @param do.umap.dist Logical: if TRUE, scale Euclidean distances to distances beyond nearest neighbors as in the UMAP algorithm.
+#' @param do.umap.dist Logical; if TRUE, scale Euclidean distances to distances beyond nearest neighbors as in the UMAP algorithm.
 #' @param a Default: log2(k) and log(k/(k-1)) when setting umap.dist to TRUE and FALSE respectively.
 #'        a < 1 represents the probability of a cell communicating with its kth nearest neighbor.
 #'        a > 1 represents the sum of probabilities of a cell communicating with its k nearest neighbors.
-#' @param do.laplacian Logical: if TRUE, perform Laplacian normalization on the affinity matrix.
+#' @param do.laplacian Logical; if TRUE, perform Laplacian normalization on the affinity matrix.
 #' @param norm How to symmetrize the affinity matrix. Default is Probabilistic t-norm. The other option is 'average'.
+#' @param ret.graph Logical; if TRUE, return the diffusion operator and store it in the \code{graph} slot of the imputation assay.
+#' @param ndcs Calculate \code{ndcs} number of diffusion components by eigen decomposing the diffusion operator.
+#'        Resulting cell embedding is stored in the \code{reduction} slot of the imputation assay.
+#' @param replace Logical; if TRUE, replace the existing \code{pseudobulk} assay.
 #'
 #' @return A \code{Sincast} object with updated \code{imputation} assay.
 #'
 #' @seealso [SincastAggregate()]
+#'
+#' @importFrom RSpectra eigs
 #'
 #' @export
 #' @name SincastImpute
@@ -114,7 +120,10 @@ setGeneric("SincastImpute", function(object,
                                      do.umap.dist = TRUE,
                                      a = NULL,
                                      do.laplacian = TRUE,
-                                     norm = c("probabilistic", "average"), ...) {
+                                     norm = c("probabilistic", "average"),
+                                     ret.graph = TRUE,
+                                     ndcs = 10,
+                                     replace = FALSE, ...) {
   standardGeneric("SincastImpute")
 })
 
@@ -132,7 +141,10 @@ setMethod("SincastImpute", "Sincast", function(object,
                                                do.umap.dist = TRUE,
                                                a = NULL,
                                                do.laplacian = TRUE,
-                                               norm = c("probabilistic", "average"), ...) {
+                                               norm = c("probabilistic", "average"),
+                                               ret.graph = TRUE,
+                                               ndcs = 10,
+                                               replace = FALSE,...) {
   # Check the validity of the Sincast object.
   Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
 
@@ -142,7 +154,7 @@ setMethod("SincastImpute", "Sincast", function(object,
   )) {
     if (!replace) {
       stop(
-        "SincastImpute: An imputation assay already exists, set replace = T to enforce a replacement."
+        "SincastImpute: An imputation assay already exists, set 'replace = T' to enforce a replacement."
       )
     } else {
       message("SincastImpute: An imputation assay already exists. Will be replaced as 'replace = T'.")
@@ -162,13 +174,8 @@ setMethod("SincastImpute", "Sincast", function(object,
   # Check norm format.
   norm <- match.arg(norm)
 
-  # Check whether PCA has been run on the original Seurat object.
-  if (!"pca" %in% Reductions(original)) {
-    stop("pca not found in the original Seurat object.")
-  }
-
   # Get pcs.
-  pcs <- original@reductions$pca@cell.embeddings
+  pcs <- Seurat::Embeddings(original, reduction ="pca")
   cells <- rownames(pcs)
   if (!is.null(npcs)) {
     pcs <- pcs[, 1:npcs]
@@ -298,6 +305,24 @@ setMethod("SincastImpute", "Sincast", function(object,
   # Add token to the new Seurat object,
   Seurat::Misc(out, slot = "SincastToken") <- SincastToken
 
+  # Return the diffusion operator and diffusion map.
+  if(ret.graph){
+    graph.names <- paste(assay, "Sincast", sep = "_")
+    out[[graph.names]] <- as.Graph(p)
+  }
+
+  message("Constructing diffusion map.")
+  if(!is.null(ndcs)){
+    s <- eigs(p,k =ndcs+1, method = 'LR')
+    s$values <- Re(s$values); s$vectors <- Re(s$vectors)
+    dc <-  sweep(s$vectors, 2, s$values^t, '*')
+    dc <- dc[,-1]
+    rownames(dc) <- cells
+    colnames(dc) <- paste("DC", 1:ndcs, sep = "_")
+    out[["dm_Sincast"]] <- Seurat::CreateDimReducObject(embeddings = dc,
+                                                        assay = assay)
+  }
+
   # Add or replace the imputation assay by the new Seurat object.
   Sincast::GetSincastAssays(object, assay = "imputation") <- out
 
@@ -308,3 +333,135 @@ setMethod("SincastImpute", "Sincast", function(object,
 
   object
 })
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# ImputationPlot
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' Plot the diffusion components computed on the diffusion operator used for \code{Sincast}
+#' imputation
+#'
+#' To be added.
+#'
+#' @param object \code{Sincast}'s imputation assay, which suppose to be a \code{Seurat} object
+#'  generated by \code{\link[Sincast]{SincastImpute}}.
+#' @param dims Dimensions to plot, must be a three-length numeric vector specifying x-, y- and z-dimensions.
+#' @param cells Cells to plot.
+#' @param color.by Color query cells by which feature or meta.data attribute.
+#' @param colors Color Scheme of col.by. Should be a named vector using color
+#'  codes as values and labels of \code{color.by} as names.
+#' @param anno.by Additional annotation of query cells.
+#'
+#' @return A \code{plotly} object.
+#'
+#' @seealso [SincastImpute()]
+#'
+#' @family Sincast plot methods
+#'
+#' @import plotly
+#'
+#' @export
+#' @name ImputationPlot
+#' @rdname ImputationPlot
+#' @aliases Sincast, SincastAssays, Seurat
+setGeneric("ImputationPlot", function(object,
+                                     dims = 1:3,
+                                     cells = NULL,
+                                     color.by = 'ident',
+                                     colors = NULL,
+                                     anno.by = NULL, ...) {
+  standardGeneric("ImputationPlot")
+})
+
+
+#' @name ImputationPlot
+#' @rdname ImputationPlot
+setMethod("ImputationPlot", "Seurat", function(object,
+                                               dims = 1:3,
+                                               cells = NULL,
+                                               color.by = 'ident',
+                                               colors = NULL,
+                                               anno.by = NULL, ...)  {
+  if(!all(is.numeric(dims)) | length(dims) != 3){
+    warning("dims must be a three-length numeric vector.")
+  }
+
+  if (!is.null(cells)) object <- object[cells, ]
+
+  dcs <- Seurat::Embeddings(object, reduction ="dm_Sincast")
+  dcs <- dcs[, dims]
+  axis.labels <- colnames(dcs)
+  colnames(dcs) <- c("x","y","z")
+
+
+  # Generate color
+  color <- NULL
+  if(!is.character(color.by) | length(color.by) != 1){
+    warning("color.by should be a single character.")
+  }
+
+  if(color.by == "ident"){
+    color <- Seurat::Idents(object)[]
+  }else if(color.by %in% rownames(object)){
+    color <- Seurat::GetAssayData(object)[color.by,]
+  }else if(color.by %in% colnames(object@meta.data)){
+    color <- object@meta.data[,color.by]
+  }else{
+    warning(color.by, " was not found in neither the data nor the metadata.")
+  }
+
+  # Generate annotation
+  anno <- NULL
+
+  if(!is.null(anno.by) & !all(is.character(anno.by))){
+    stop("anno.by should be a character vector.")
+  }
+
+  for(i in anno.by){
+    if(i == "ident"){
+      tmp <- paste(i, Seurat::Idents(object)[], sep = ":")
+      anno <- paste(anno, tmp, sep = "\n")
+    }else if(i %in% rownames(object)){
+      tmp <- paste(i, Seurat::GetAssayData(object)[i,], sep = ":")
+      anno <- paste(anno, tmp, sep = "\n")
+
+    }else if(i %in% colnames(object@meta.data)){
+      tmp <- paste(i, object@meta.data[,i], sep = ":")
+      anno <- paste(anno, tmp, sep = "\n")
+    }else{
+      warning(i, " was not found in either the data nor the metadata.")
+    }
+  }
+
+  # Generate plot
+  fig <- plot_ly() %>% add_trace(data = data.frame(dcs), type = "scatter3d",
+                                                 mode = "markers",
+                                                 x = ~x, y = ~y, z = ~z,
+                                                 color = color,
+                                                 colors = colors,
+                                                 text = anno, ...) %>%
+  layout(legend = list(orientation = 'h'),
+         scene = list(
+           xaxis = list(title = axis.labels[1]),
+           yaxis = list(title = axis.labels[2]),
+           zaxis = list(title = axis.labels[3])
+         ))
+
+  suppressMessages(suppressWarnings(fig))
+})
+
+
+#' @name ImputationPlot
+#' @rdname ImputationPlot
+setMethod("ImputationPlot", "Sincast", function(object,
+                                                dims = 1:3,
+                                                cells = NULL,
+                                                color.by = 'ident',
+                                                colors = NULL,
+                                                anno.by = NULL, ...) {
+  object <- Sincast::GetSincastAssays(object, "imputation")
+  Sincast::ImputationPlot(object = object, dims = dims, cells = cells,
+                          color.by = color.by, colors = colors,
+                          anno.by = anno.by, ...)
+})
+

@@ -22,7 +22,7 @@ GeneratePseudobulk <- function(data, n.pool, aggregate.method) {
 #'
 #' Perform \code{Sincast} aggregation.
 #'
-#' @param object A \code{Sincast} object
+#' @param object A \code{Sincast} object.
 #' @param assay Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.
 #' @param layer Which \code{Seurat} layer to use. Default is the \code{counts} layer.
 #' @param features Features to analyze. Default is all features in the assay.
@@ -32,7 +32,7 @@ GeneratePseudobulk <- function(data, n.pool, aggregate.method) {
 #' @param size.factor To be added.
 #' @param pool.factor To be added.
 #' @param sep To be added.
-#' @param replace Whether to replace the existing \code{pseudobulk} assay.
+#' @param replace Logical; if TRUE, replace the existing \code{pseudobulk} assay.
 #'
 #' @return A \code{Sincast} object with updated \code{pseudobulk} assay.
 #'
@@ -53,29 +53,12 @@ setGeneric("SincastAggregate", function(object,
                                         n.pool = 15,
                                         size.factor = 1,
                                         pool.factor = NULL,
-                                        sep = ".", replace = FALSE, ...) {
+                                        sep = "_", replace = FALSE, ...) {
   standardGeneric("SincastAggregate")
 })
 
 #' @name SincastAggregate
 #' @rdname SincastAggregate
-<<<<<<< HEAD
-setMethod("SincastAggregate", "Seurat", function(object,
-                                                 assay = NULL,
-                                                 layer = "counts",
-                                                 cells = NULL,
-                                                 features = NULL,
-                                                 group.by = "ident",
-                                                 sample.method = c("equal.size", "equal.prop"),
-                                                 aggregate.method = c("addition", "average"),
-                                                 n.pool = 15,
-                                                 size.factor = 1,
-                                                 pool.factor = NULL,
-                                                 sep = ".", replace = FALSE, ...) {
-
-  # Check the validity of the "Sincast" object in "Seurat"'s "misc" slot.
-  test.SincastObject <- Sincast::CheckSincastObject(object, complete = FALSE)
-=======
 setMethod("SincastAggregate", "Sincast", function(object,
                                                   assay = NULL,
                                                   layer = "counts",
@@ -87,10 +70,9 @@ setMethod("SincastAggregate", "Sincast", function(object,
                                                   n.pool = 15,
                                                   size.factor = 1,
                                                   pool.factor = NULL,
-                                                  sep = ".", replace = FALSE, ...) {
+                                                  sep = "_", replace = FALSE, ...) {
   # Check the validity of the Sincast object.
   Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
->>>>>>> 9d00e3fad231ab9bd5d868084778a3dce1dcef48
 
   # If a pseudobulk assay already exists, either replace it or return an error.
   if (!is.null(
@@ -115,16 +97,8 @@ setMethod("SincastAggregate", "Sincast", function(object,
     Seurat::DefaultAssay(original) <- assay
   }
 
-<<<<<<< HEAD
-  # Get features to aggregate.
-  if(!is.null(features)) object <- object[features, ]
-
-  # Get cells to aggregate.
-  if(!is.null(cells)) object <- object[,cells]
-=======
   # Get default features to aggregate.
   if (!is.null(features)) original <- original[features, ]
->>>>>>> 9d00e3fad231ab9bd5d868084778a3dce1dcef48
 
   # Get the default group.
   if (group.by == "ident") {

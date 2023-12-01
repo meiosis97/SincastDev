@@ -6,9 +6,8 @@ GenerateSincastToken <- function(by = "GenerateSincastToken", command = deparse(
       names(command) <- id
 
     }else if(SeuratObject::IsNamedList(extend)){
-      ids <- c(names(extend),id)
-      command <- c(extend, command)
-      names(command) <- ids
+      extend[[id]] <- command
+      command <- extend
 
     }else{
       stop("Invalid Extension.")

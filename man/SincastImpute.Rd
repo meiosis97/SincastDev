@@ -18,6 +18,9 @@ SincastImpute(
   a = NULL,
   do.laplacian = TRUE,
   norm = c("probabilistic", "average"),
+  ret.graph = TRUE,
+  ndcs = 10,
+  replace = FALSE,
   ...
 )
 
@@ -33,11 +36,14 @@ SincastImpute(
   a = NULL,
   do.laplacian = TRUE,
   norm = c("probabilistic", "average"),
+  ret.graph = TRUE,
+  ndcs = 10,
+  replace = FALSE,
   ...
 )
 }
 \arguments{
-\item{object}{A \code{Sincast} object}
+\item{object}{A \code{Sincast} object.}
 
 \item{assay}{Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.}
 
@@ -51,15 +57,22 @@ SincastImpute(
 
 \item{knn}{A cell can only be connected to knn neighbors when t is set 1.}
 
-\item{do.umap.dist}{Logical: if TRUE, scale Euclidean distances to distances beyond nearest neighbors as in the UMAP algorithm.}
+\item{do.umap.dist}{Logical; if TRUE, scale Euclidean distances to distances beyond nearest neighbors as in the UMAP algorithm.}
 
 \item{a}{Default: log2(k) and log(k/(k-1)) when setting umap.dist to TRUE and FALSE respectively.
 a < 1 represents the probability of a cell communicating with its kth nearest neighbor.
 a > 1 represents the sum of probabilities of a cell communicating with its k nearest neighbors.}
 
-\item{do.laplacian}{Logical: if TRUE, perform Laplacian normalization on the affinity matrix.}
+\item{do.laplacian}{Logical; if TRUE, perform Laplacian normalization on the affinity matrix.}
 
 \item{norm}{How to symmetrize the affinity matrix. Default is Probabilistic t-norm. The other option is 'average'.}
+
+\item{ret.graph}{Logical; if TRUE, return the diffusion operator and store it in the \code{graph} slot of the imputation assay.}
+
+\item{ndcs}{Calculate \code{ndcs} number of diffusion components by eigen decomposing the diffusion operator.
+Resulting cell embedding is stored in the \code{reduction} slot of the imputation assay.}
+
+\item{replace}{Logical; if TRUE, replace the existing \code{pseudobulk} assay.}
 }
 \value{
 A \code{Sincast} object with updated \code{imputation} assay.
