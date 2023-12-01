@@ -104,8 +104,6 @@ FindSigma <- function(dk, a, k) {
 #'
 #' @seealso [SincastAggregate()]
 #'
-#' @importFrom RSpectra eigs
-#'
 #' @export
 #' @name SincastImpute
 #' @rdname SincastImpute
@@ -144,7 +142,7 @@ setMethod("SincastImpute", "Sincast", function(object,
                                                norm = c("probabilistic", "average"),
                                                ret.graph = TRUE,
                                                ndcs = 10,
-                                               replace = FALSE,...) {
+                                               replace = FALSE, ...) {
   # Check the validity of the Sincast object.
   Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
 
@@ -175,7 +173,7 @@ setMethod("SincastImpute", "Sincast", function(object,
   norm <- match.arg(norm)
 
   # Get pcs.
-  pcs <- Seurat::Embeddings(original, reduction ="pca")
+  pcs <- Seurat::Embeddings(original, reduction = "pca")
   cells <- rownames(pcs)
   if (!is.null(npcs)) {
     pcs <- pcs[, 1:npcs]
@@ -306,21 +304,24 @@ setMethod("SincastImpute", "Sincast", function(object,
   Seurat::Misc(out, slot = "SincastToken") <- SincastToken
 
   # Return the diffusion operator and diffusion map.
-  if(ret.graph){
+  if (ret.graph) {
     graph.names <- paste(assay, "Sincast", sep = "_")
     out[[graph.names]] <- as.Graph(p)
   }
 
   message("Constructing diffusion map.")
-  if(!is.null(ndcs)){
-    s <- eigs(p,k =ndcs+1, method = 'LR')
-    s$values <- Re(s$values); s$vectors <- Re(s$vectors)
-    dc <-  sweep(s$vectors, 2, s$values^t, '*')
-    dc <- dc[,-1]
+  if (!is.null(ndcs)) {
+    s <- eigs(p, k = ndcs + 1, method = "LR")
+    s$values <- Re(s$values)
+    s$vectors <- Re(s$vectors)
+    dc <- sweep(s$vectors, 2, s$values^t, "*")
+    dc <- dc[, -1]
     rownames(dc) <- cells
     colnames(dc) <- paste("DC", 1:ndcs, sep = "_")
-    out[["dm_Sincast"]] <- Seurat::CreateDimReducObject(embeddings = dc,
-                                                        assay = assay)
+    out[["dm_Sincast"]] <- Seurat::CreateDimReducObject(
+      embeddings = dc,
+      assay = assay
+    )
   }
 
   # Add or replace the imputation assay by the new Seurat object.
@@ -358,18 +359,16 @@ setMethod("SincastImpute", "Sincast", function(object,
 #'
 #' @family Sincast plot methods
 #'
-#' @import plotly
-#'
 #' @export
 #' @name ImputationPlot
 #' @rdname ImputationPlot
 #' @aliases Sincast, SincastAssays, Seurat
 setGeneric("ImputationPlot", function(object,
-                                     dims = 1:3,
-                                     cells = NULL,
-                                     color.by = 'ident',
-                                     colors = NULL,
-                                     anno.by = NULL, ...) {
+                                      dims = 1:3,
+                                      cells = NULL,
+                                      color.by = "ident",
+                                      colors = NULL,
+                                      anno.by = NULL, ...) {
   standardGeneric("ImputationPlot")
 })
 
@@ -379,73 +378,77 @@ setGeneric("ImputationPlot", function(object,
 setMethod("ImputationPlot", "Seurat", function(object,
                                                dims = 1:3,
                                                cells = NULL,
-                                               color.by = 'ident',
+                                               color.by = "ident",
                                                colors = NULL,
-                                               anno.by = NULL, ...)  {
-  if(!all(is.numeric(dims)) | length(dims) != 3){
+                                               anno.by = NULL, ...) {
+  if (!all(is.numeric(dims)) | length(dims) != 3) {
     warning("dims must be a three-length numeric vector.")
   }
 
   if (!is.null(cells)) object <- object[cells, ]
 
-  dcs <- Seurat::Embeddings(object, reduction ="dm_Sincast")
+  dcs <- Seurat::Embeddings(object, reduction = "dm_Sincast")
   dcs <- dcs[, dims]
   axis.labels <- colnames(dcs)
-  colnames(dcs) <- c("x","y","z")
+  colnames(dcs) <- c("x", "y", "z")
 
 
   # Generate color
   color <- NULL
-  if(!is.character(color.by) | length(color.by) != 1){
+  if (!is.character(color.by) | length(color.by) != 1) {
     warning("color.by should be a single character.")
   }
 
-  if(color.by == "ident"){
+  if (color.by == "ident") {
     color <- Seurat::Idents(object)[]
-  }else if(color.by %in% rownames(object)){
-    color <- Seurat::GetAssayData(object)[color.by,]
-  }else if(color.by %in% colnames(object@meta.data)){
-    color <- object@meta.data[,color.by]
-  }else{
+  } else if (color.by %in% rownames(object)) {
+    color <- Seurat::GetAssayData(object)[color.by, ]
+  } else if (color.by %in% colnames(object@meta.data)) {
+    color <- object@meta.data[, color.by]
+  } else {
     warning(color.by, " was not found in neither the data nor the metadata.")
   }
 
   # Generate annotation
   anno <- NULL
 
-  if(!is.null(anno.by) & !all(is.character(anno.by))){
+  if (!is.null(anno.by) & !all(is.character(anno.by))) {
     stop("anno.by should be a character vector.")
   }
 
-  for(i in anno.by){
-    if(i == "ident"){
+  for (i in anno.by) {
+    if (i == "ident") {
       tmp <- paste(i, Seurat::Idents(object)[], sep = ":")
       anno <- paste(anno, tmp, sep = "\n")
-    }else if(i %in% rownames(object)){
-      tmp <- paste(i, Seurat::GetAssayData(object)[i,], sep = ":")
+    } else if (i %in% rownames(object)) {
+      tmp <- paste(i, Seurat::GetAssayData(object)[i, ], sep = ":")
       anno <- paste(anno, tmp, sep = "\n")
-
-    }else if(i %in% colnames(object@meta.data)){
-      tmp <- paste(i, object@meta.data[,i], sep = ":")
+    } else if (i %in% colnames(object@meta.data)) {
+      tmp <- paste(i, object@meta.data[, i], sep = ":")
       anno <- paste(anno, tmp, sep = "\n")
-    }else{
+    } else {
       warning(i, " was not found in either the data nor the metadata.")
     }
   }
 
   # Generate plot
-  fig <- plot_ly() %>% add_trace(data = data.frame(dcs), type = "scatter3d",
-                                                 mode = "markers",
-                                                 x = ~x, y = ~y, z = ~z,
-                                                 color = color,
-                                                 colors = colors,
-                                                 text = anno, ...) %>%
-  layout(legend = list(orientation = 'h'),
-         scene = list(
-           xaxis = list(title = axis.labels[1]),
-           yaxis = list(title = axis.labels[2]),
-           zaxis = list(title = axis.labels[3])
-         ))
+  fig <- plot_ly() %>%
+    add_trace(
+      data = data.frame(dcs), type = "scatter3d",
+      mode = "markers",
+      x = ~x, y = ~y, z = ~z,
+      color = color,
+      colors = colors,
+      text = anno, ...
+    ) %>%
+    layout(
+      legend = list(orientation = "h"),
+      scene = list(
+        xaxis = list(title = axis.labels[1]),
+        yaxis = list(title = axis.labels[2]),
+        zaxis = list(title = axis.labels[3])
+      )
+    )
 
   suppressMessages(suppressWarnings(fig))
 })
@@ -456,12 +459,13 @@ setMethod("ImputationPlot", "Seurat", function(object,
 setMethod("ImputationPlot", "Sincast", function(object,
                                                 dims = 1:3,
                                                 cells = NULL,
-                                                color.by = 'ident',
+                                                color.by = "ident",
                                                 colors = NULL,
                                                 anno.by = NULL, ...) {
   object <- Sincast::GetSincastAssays(object, "imputation")
-  Sincast::ImputationPlot(object = object, dims = dims, cells = cells,
-                          color.by = color.by, colors = colors,
-                          anno.by = anno.by, ...)
+  Sincast::ImputationPlot(
+    object = object, dims = dims, cells = cells,
+    color.by = color.by, colors = colors,
+    anno.by = anno.by, ...
+  )
 })
-
