@@ -22,7 +22,7 @@ GeneratePseudobulk <- function(data, n.pool, aggregate.method) {
 #'
 #' Perform \code{Sincast} aggregation.
 #'
-#' @param object A \code{Sincast} object
+#' @param object A \code{Sincast} object.
 #' @param assay Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.
 #' @param layer Which \code{Seurat} layer to use. Default is the \code{counts} layer.
 #' @param features Features to analyze. Default is all features in the assay.
@@ -32,7 +32,7 @@ GeneratePseudobulk <- function(data, n.pool, aggregate.method) {
 #' @param size.factor To be added.
 #' @param pool.factor To be added.
 #' @param sep To be added.
-#' @param replace Whether to replace the existing \code{pseudobulk} assay.
+#' @param replace Logical; if TRUE, replace the existing \code{pseudobulk} assay.
 #'
 #' @return A \code{Sincast} object with updated \code{pseudobulk} assay.
 #'
@@ -53,7 +53,7 @@ setGeneric("SincastAggregate", function(object,
                                         n.pool = 15,
                                         size.factor = 1,
                                         pool.factor = NULL,
-                                        sep = ".", replace = FALSE, ...) {
+                                        sep = "_", replace = FALSE, ...) {
   standardGeneric("SincastAggregate")
 })
 
@@ -70,7 +70,7 @@ setMethod("SincastAggregate", "Sincast", function(object,
                                                   n.pool = 15,
                                                   size.factor = 1,
                                                   pool.factor = NULL,
-                                                  sep = ".", replace = FALSE, ...) {
+                                                  sep = "_", replace = FALSE, ...) {
   # Check the validity of the Sincast object.
   Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
 

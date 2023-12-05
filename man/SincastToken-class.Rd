@@ -27,6 +27,7 @@ To be added.
 Other Sincast classes: 
 \code{\link{Sincast-class}},
 \code{\link{SincastAssays-class}},
+\code{\link{SincastAtlas-class}},
 \code{\link{SincastSummary-class}}
 }
 \concept{Sincast classes}

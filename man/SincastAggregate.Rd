@@ -18,7 +18,7 @@ SincastAggregate(
   n.pool = 15,
   size.factor = 1,
   pool.factor = NULL,
-  sep = ".",
+  sep = "_",
   replace = FALSE,
   ...
 )
@@ -35,13 +35,13 @@ SincastAggregate(
   n.pool = 15,
   size.factor = 1,
   pool.factor = NULL,
-  sep = ".",
+  sep = "_",
   replace = FALSE,
   ...
 )
 }
 \arguments{
-\item{object}{A \code{Sincast} object}
+\item{object}{A \code{Sincast} object.}
 
 \item{assay}{Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.}
 
@@ -61,7 +61,7 @@ SincastAggregate(
 
 \item{sep}{To be added.}
 
-\item{replace}{Whether to replace the existing \code{pseudobulk} assay.}
+\item{replace}{Logical; if TRUE, replace the existing \code{pseudobulk} assay.}
 }
 \value{
 A \code{Sincast} object with updated \code{pseudobulk} assay.

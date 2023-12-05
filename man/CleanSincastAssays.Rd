@@ -4,14 +4,20 @@
 \alias{CleanSincastAssays}
 \alias{Sincast,}
 \alias{SincastAssays}
+\alias{CleanSincastAssays,SincastAssays-method}
 \alias{CleanSincastAssays,Sincast-method}
 \title{Remove unwanted or invalid (i.e, non-\code{Seurat} object) in \code{Sincast} assays
 (\code{pseudobulk} and \code{imputation}) embedded in \code{Sincast}.}
 \usage{
 CleanSincastAssays(
   object,
-  remove.id.pseudobulk = NULL,
-  remove.id.imputation = NULL,
+  clean.up = c("none", "all", "pseudobulk", "imputation"),
+  remove.invalid = TRUE,
+  ...
+)
+
+\S4method{CleanSincastAssays}{SincastAssays}(
+  object,
   clean.up = c("none", "all", "pseudobulk", "imputation"),
   remove.invalid = TRUE,
   ...
@@ -19,8 +25,6 @@ CleanSincastAssays(
 
 \S4method{CleanSincastAssays}{Sincast}(
   object,
-  remove.id.pseudobulk = NULL,
-  remove.id.imputation = NULL,
   clean.up = c("none", "all", "pseudobulk", "imputation"),
   remove.invalid = TRUE,
   ...

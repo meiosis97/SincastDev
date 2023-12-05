@@ -23,6 +23,7 @@ Validation of \code{SincastSummary} objects is handled by \code{\link[methods]{v
 Other Sincast classes: 
 \code{\link{Sincast-class}},
 \code{\link{SincastAssays-class}},
+\code{\link{SincastAtlas-class}},
 \code{\link{SincastToken-class}}
 }
 \concept{Sincast classes}
