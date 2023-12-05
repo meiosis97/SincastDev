@@ -37,7 +37,7 @@ setMethod("as.Sincast", "Seurat", function(object, ...) {
 
 #' @rdname as.Sincast
 setMethod("as.Sincast", "Sincast", function(object, ...) {
-  Sincast::CheckSincastObject(object)
+  Sincast::CheckSincastObject(object, complete = FALSE)
   object
 })
 
@@ -76,6 +76,7 @@ setMethod("CheckSincastObject", "Sincast", function(object, test = TRUE,
   problem <- NULL
   test.SincastObject <- "Valid"
   test.SincastAssays <- NULL
+  test.SincastAtlas <- NULL
 
   if (FALSE) {
     # %%%%%%%%%% TO BE ADDED: TESTS FOR THE MAIN OBJECT %%%%%%%%% #
@@ -100,6 +101,19 @@ setMethod("CheckSincastObject", "Sincast", function(object, test = TRUE,
         collapse = ""
       )
     }
+
+    #  Check the validity of SincastAtlas
+    test.SincastAtlas <- Sincast::CheckSincastAtlas(object@SincastAtlas, silent = TRUE)
+
+    if (!all(test.SincastAtlas %in% c("Valid", "Empty"))) {
+      problem <- paste(
+        "CheckSincastObject: Check SincastAtlas: ",
+        "\n original atlas: ", test.SincastAtlas["original"],
+        "\n pseudobulk atlas: ", test.SincastAtlas["pseudobulk"],
+        "\n imputation atlas: ", test.SincastAtlas["imputation"],
+        collapse = ""
+      )
+    }
   }
 
   # Print error messages.
@@ -108,6 +122,7 @@ setMethod("CheckSincastObject", "Sincast", function(object, test = TRUE,
   }
 
   attr(test.SincastObject, "Sincastassays") <- test.SincastAssays
+  attr(test.SincastObject, "SincastAtlas") <- test.SincastAtlas
   test.SincastObject
 
 })
@@ -140,6 +155,19 @@ setMethod(
   }
 )
 
+setMethod(
+  f = '[[',
+  signature = c(
+    x = 'Sincast',
+    i = 'character',
+    j = 'character'
+  ),
+  definition = function(x, i, j = c("assay", "atlas"),...) {
+    j <- match.arg(j)
+    if(j == "assay") Sincast::GetSincastAssays(x, assay = i, ...)
+    if(j == "atlas") Sincast::GetSincastAtlas(x, atlas = i, ...)
+  }
+)
 
 setMethod(
   f = '[[<-',
@@ -149,8 +177,25 @@ setMethod(
     j = 'missing',
     value = "ANY"
   ),
-  definition = function(x, i, ..., value) {
+  definition = function(x, i, j, ..., value) {
     Sincast::GetSincastAssays(x, assay = i, ...) <- value
+    x
+  }
+)
+
+
+setMethod(
+  f = '[[<-',
+  signature = c(
+    x = 'Sincast',
+    i = 'character',
+    j = 'character',
+    value = "ANY"
+  ),
+  definition = function(x, i, j = c("assay", "atlas"),..., value) {
+    j <- match.arg(j)
+    if(j == "assay") Sincast::GetSincastAssays(x, assay = i, ...) <- value
+    if(j == "atlas") Sincast::GetSincastAtlas(x, atlas = i, ...) <- value
     x
   }
 )

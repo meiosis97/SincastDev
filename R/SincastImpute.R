@@ -74,6 +74,33 @@ FindSigma <- function(dk, a, k) {
   cur
 }
 
+PostScale <- function(before, atfer){
+  N <- ncol(before)
+  G <- nrow(before)
+  q <- ppoints(N) %>% qnorm()
+  w <- rowMeans(before!=0)
+
+  #Gene-wise mean and variance estimate on expressed genes
+  message('Genewise Mean and Variance estimation on imputed data')
+  mu <-c()
+  var <- c()
+  for(i in 1:G){
+    z <- sort(x[i,])
+    if(sum(z>0)>1){
+      lmod <- lm(z[z>0]~q[z>0])
+      mu[i] <- lmod$coefficients[1]
+      var[i] <- lmod$coefficients[2]^2
+    }else{
+      mu[i] <- NA
+      var[i] <- NA
+    }
+  }
+  names(mu) <-  names(var) <- names(w) <- rownames(query)
+  message('Done')
+
+
+
+}
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Exported
@@ -402,7 +429,7 @@ setMethod("ImputationPlot", "Seurat", function(object,
   if (color.by == "ident") {
     color <- Seurat::Idents(object)[]
   } else if (color.by %in% rownames(object)) {
-    color <- Seurat::GetAssayData(object)[color.by, ]
+    color <- suppressWarnings( Seurat::GetAssayData(object)[color.by, ] )
   } else if (color.by %in% colnames(object@meta.data)) {
     color <- object@meta.data[, color.by]
   } else {
@@ -421,7 +448,7 @@ setMethod("ImputationPlot", "Seurat", function(object,
       tmp <- paste(i, Seurat::Idents(object)[], sep = ":")
       anno <- paste(anno, tmp, sep = "\n")
     } else if (i %in% rownames(object)) {
-      tmp <- paste(i, Seurat::GetAssayData(object)[i, ], sep = ":")
+      tmp <- suppressWarnings( paste(i, Seurat::GetAssayData(object)[i, ], sep = ":") )
       anno <- paste(anno, tmp, sep = "\n")
     } else if (i %in% colnames(object@meta.data)) {
       tmp <- paste(i, object@meta.data[, i], sep = ":")
@@ -462,6 +489,9 @@ setMethod("ImputationPlot", "Sincast", function(object,
                                                 color.by = "ident",
                                                 colors = NULL,
                                                 anno.by = NULL, ...) {
+  # Check the validity of the Sincast object.
+  Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
+
   object <- Sincast::GetSincastAssays(object, "imputation")
   Sincast::ImputationPlot(
     object = object, dims = dims, cells = cells,

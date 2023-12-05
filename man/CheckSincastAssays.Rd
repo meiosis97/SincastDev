@@ -5,11 +5,14 @@
 \alias{Sincast,}
 \alias{SincastAssays}
 \alias{CheckSincastAssays,SincastAssays-method}
+\alias{CheckSincastAssays,Sincast-method}
 \title{Check the validity of the \code{SincastAssays} object of \code{Sincast}.}
 \usage{
 CheckSincastAssays(object, test = TRUE, slient = FALSE, ...)
 
 \S4method{CheckSincastAssays}{SincastAssays}(object, test = TRUE, silent = FALSE, ...)
+
+\S4method{CheckSincastAssays}{Sincast}(object, test = TRUE, silent = FALSE, ...)
 }
 \arguments{
 \item{object}{A \code{SincastAssays} object.}

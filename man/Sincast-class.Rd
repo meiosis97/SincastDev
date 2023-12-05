@@ -21,6 +21,7 @@ To be added.
 \seealso{
 Other Sincast classes: 
 \code{\link{SincastAssays-class}},
+\code{\link{SincastAtlas-class}},
 \code{\link{SincastSummary-class}},
 \code{\link{SincastToken-class}}
 }

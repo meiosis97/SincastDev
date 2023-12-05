@@ -108,6 +108,32 @@ SincastAssays <- setClass(
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# SincastAtlas
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' A S4 class to store \code{Sincast} pseudobulk or imputation atlas
+#'
+#' To be added.
+#'
+#' @slot original A \code{Seurat} object storing the atlas constructed on the original data.
+#' @slot pseudobulk A \code{Seurat} object storing the pseudobulk atlas.
+#' @slot imputation A \code{Seurat} object storing the imputation atlas.
+#'
+#' @family Sincast classes
+#'
+#' @name SincastAtlas-class
+#' @rdname SincastAtlas-class
+#' @aliases Sincast, SincastAtlas
+SincastAtlas <- setClass(
+  Class = "SincastAtlas",
+  slots = list(
+    original = "ANY",
+    pseudobulk = "ANY",
+    imputation = "ANY"
+  )
+)
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Sincast
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #' An S4 class of \code{Sincast} object.
@@ -126,6 +152,7 @@ Sincast <- setClass(
   Class = "Sincast",
   slots = list(
     SincastAssays = "SincastAssays",
+    SincastAtlas = "SincastAtlas",
     summary = "SincastSummary"
   )
 )

@@ -61,6 +61,17 @@ setMethod("CheckSincastAssays", "SincastAssays", function(object, test = TRUE, s
   test.result
 })
 
+#' @rdname CheckSincastAssays
+setMethod("CheckSincastAssays", "Sincast", function(object, test = TRUE, silent = FALSE, ...) {
+  # Check the validity of the Sincast object.
+  Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
+
+  object <- Sincast::GetSincastAssays(object)
+  Sincast::CheckSincastAssays(
+    object = object, test = test, silent = silent, ...  )
+})
+
+
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # GetSincastAssays
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -172,10 +183,14 @@ setMethod("GetSincastAssays<-", "Sincast", function(object, assay = c(
   # Check the validity of the Sincast assays.
   test.SincastAssays <- Sincast::CheckSincastAssays(object@SincastAssays, silent = TRUE)
 
-  if (assay == "both" & !all(test.SincastAssays %in% c("Valid", "Empty"))) {
+  if (assay == "all" & !all(test.SincastAssays %in% c("Valid", "Empty"))) {
     warning("At least one Sincast Assay is invalid.")
-  } else if (assay != "both" & test.SincastAssays[assay] != "Valid") {
-    warning("Invalid ", assay, " assay provided.")
+  }
+
+  if(assay != "all") {
+    if(test.SincastAssays[assay] != "Valid"){
+      warning("Invalid ", assay, " assay provided.")
+    }
   }
 
   object
@@ -205,8 +220,6 @@ setMethod("GetSincastAssays<-", "Sincast", function(object, assay = c(
 #' @rdname CleanSincastAssays
 #' @aliases Sincast, SincastAssays
 setGeneric("CleanSincastAssays", function(object,
-                                          remove.id.pseudobulk = NULL,
-                                          remove.id.imputation = NULL,
                                           clean.up = c("none", "all", "pseudobulk", "imputation"),
                                           remove.invalid = TRUE,
                                           ...) {
@@ -214,16 +227,10 @@ setGeneric("CleanSincastAssays", function(object,
 })
 
 #' @rdname CleanSincastAssays
-setMethod("CleanSincastAssays", "Sincast", function(object,
+setMethod("CleanSincastAssays", "SincastAssays", function(object,
                                                     clean.up = c("none", "all", "pseudobulk", "imputation"),
                                                     remove.invalid = TRUE, ...) {
-  # Check the validity of the Sincast object.
-  Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
-
-  ret.summary <- FALSE
-
-  SincastAssays <- object@SincastAssays
-  test.SincastAssays <- Sincast::CheckSincastAssays(SincastAssays, silent = TRUE)
+  test.SincastAssays <- Sincast::CheckSincastAssays(object, silent = TRUE)
   message(
     "CleanSincastAssays: Before clean up: ",
     "\n pseudobulk assay: ", test.SincastAssays["pseudobulk"],
@@ -235,16 +242,16 @@ setMethod("CleanSincastAssays", "Sincast", function(object,
     # Check the validity of clean.up
     clean.up <- match.arg(clean.up)
     if (clean.up == "all") {
-      SincastAssays <- new("SincastAssays")
+      object <- new("SincastAssays")
     } else if (clean.up == "pseudobulk") {
-      SincastAssays@pseudobulk <- NULL
+      object@pseudobulk <- NULL
     } else if (clean.up == "imputation") {
-      SincastAssays@imputation <- NULL
+      object@imputation <- NULL
     }
   }
 
   # Check and remove invalid elements in Sincast assays.
-  test.SincastAssays <- Sincast::CheckSincastAssays(SincastAssays, silent = TRUE)
+  test.SincastAssays <- Sincast::CheckSincastAssays(object, silent = TRUE)
   is.pseudobulk.valid <- test.SincastAssays["pseudobulk"] %in% c("Valid", "Empty")
   is.imputation.valid <- test.SincastAssays["imputation"] %in% c("Valid", "Empty")
 
@@ -254,7 +261,7 @@ setMethod("CleanSincastAssays", "Sincast", function(object,
       message(
         "CleanSincastAssays: Remove invalid 'pseudobulk' assay  as 'remove.invalid = TRUE'."
       )
-      SincastAssays@pseudobulk <- NULL
+      object@pseudobulk <- NULL
       test.SincastAssays["pseudobulk"] <- "Empty"
     } else {
       message(
@@ -269,7 +276,7 @@ setMethod("CleanSincastAssays", "Sincast", function(object,
       message(
         "CleanSincastAssays: Remove invalid 'imputation' assay as 'remove.invalid = TRUE'."
       )
-      SincastAssays@imputation <- NULL
+      object@imputation <- NULL
       test.SincastAssays["imputation"] <- "Empty"
     } else {
       message(
@@ -284,8 +291,21 @@ setMethod("CleanSincastAssays", "Sincast", function(object,
     "\n imputation assay: ", test.SincastAssays["imputation"]
   )
 
-  object@SincastAssays <- SincastAssays
+  object
+})
 
+#' @rdname CleanSincastAssays
+setMethod("CleanSincastAssays", "Sincast", function(object,
+                                                          clean.up = c("none", "all", "pseudobulk", "imputation"),
+                                                          remove.invalid = TRUE, ...) {
+  # Check the validity of the Sincast object.
+  Sincast::CheckSincastObject(object, complete = FALSE, test = FALSE)
+
+  SincastAssays <- Sincast::GetSincastAssays(object)
+  SincastAssays <- Sincast::CleanSincastAssays(object = SincastAssays,
+                              clean.up = clean.up,
+                              remove.invalid = remove.invalid, ...)
+  Sincast::GetSincastAssays(object) <- SincastAssays
   object
 })
 
@@ -302,6 +322,10 @@ setMethod("show", "SincastAssays", function(object) {
   test.SincastAssays <- Sincast::CheckSincastAssays(object, silent = TRUE)
 
   out <- paste(out, "\nSincast assay:")
+  if(test.SincastAssays["pseudobulk"] == "Empty" &
+     test.SincastAssays["imputation"] == "Empty"){
+    out <- paste(out, "\n", " No other Sincast assay present.", sep = "")
+  }
 
   # Print information for Sincast's pseudobulk assay.
   if (test.SincastAssays["pseudobulk"] == "Valid") {
@@ -314,7 +338,7 @@ setMethod("show", "SincastAssays", function(object) {
       summary[,"sparsity.after"], " sparsity after)",
       sep = ""
     )
-  } else {
+  } else if(test.SincastAssays["pseudobulk"] != "Empty"){
     out <- paste(out, "\n", " pseudobulk assay: (", test.SincastAssays["pseudobulk"], ")", sep = "")
   }
 
@@ -329,7 +353,7 @@ setMethod("show", "SincastAssays", function(object) {
       summary[,"sparsity.after"], " sparsity after)",
       sep = ""
     )
-  } else {
+  } else if(test.SincastAssays["imputation"] != "Empty"){
     out <- paste(out, "\n", " imputation assay: (", test.SincastAssays["imputation"], ")", sep = "")
   }
 
