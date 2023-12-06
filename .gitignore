@@ -1,4 +1,5 @@
 .Rbuildignore
 .Rproj.user/
 .Rhistory
-*.md
+README.md
+tests/dev2/log/log.md
