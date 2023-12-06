@@ -44,7 +44,8 @@ Laplacian <- function(aff) {
 
 MedianScale <- function(X, Y) {
   scale.factor <- apply(X, 1, function(x) median(x[x != 0])) /
-    apply(replace(Y, X == 0, NA), 1, function(y) median(y, na.rm = T))
+      apply(replace(Y, X == 0, NA), 1, function(y) median(y, na.rm = T))
+
   Y <- Y * scale.factor
   Y[is.na(Y)] <- 0
   Y
@@ -74,31 +75,62 @@ FindSigma <- function(dk, a, k) {
   cur
 }
 
-PostScale <- function(before, atfer){
+PostScale <- function(before, after){
+  after <- as.matrix(after)
   N <- ncol(before)
   G <- nrow(before)
   q <- ppoints(N) %>% qnorm()
   w <- rowMeans(before!=0)
 
-  #Gene-wise mean and variance estimate on expressed genes
-  message('Genewise Mean and Variance estimation on imputed data')
+  # Gene-wise mean and variance estimate on expressed genes.
+  message("\t Genewise Mean and Variance estimation on imputed data.")
   mu <-c()
-  var <- c()
+  v <- c()
   for(i in 1:G){
-    z <- sort(x[i,])
-    if(sum(z>0)>1){
-      lmod <- lm(z[z>0]~q[z>0])
+    qx <- sort(after[i,])
+    if(sum(qx > 0)){
+      lmod <- lm(qx~q, subset = qx > 0)
       mu[i] <- lmod$coefficients[1]
-      var[i] <- lmod$coefficients[2]^2
+      v[i] <- lmod$coefficients[2]^2
     }else{
-      mu[i] <- NA
-      var[i] <- NA
+      mu[i] <- 0
+      v[i] <- 0
     }
   }
-  names(mu) <-  names(var) <- names(w) <- rownames(query)
-  message('Done')
+  param <- data.frame(mu = mu, v = v, w = w)
+  message("\t Done")
 
+  # Estimate mean and variance trend.
+  param$log.mu <- log(param$mu + min(param$mu[param$mu>0]))
+  param$log.v <- log(param$mu + min(param$v[param$v>0]))
 
+  message("\t Now perform GAM fit.")
+  k <- 3
+  gam.mod <- mgcv::gam(log.v~s(log.mu, k = k, bs = 'cr'), weights = w, data = param)
+  # while(mgcv::k.check(gam.mod)[,4] < 0.05){
+  #   k <- k + 2
+  #   gam.mod <- mgcv::gam(log.v~s(log.mu, k = k, bs = 'cr'), weights = w, data = param)
+  # }
+  message("\t Finish regress. The basis dimension is ", k)
+
+  p <- ggplot(data = param) + geom_point(aes(log.mu, log.v, col = w))+
+    scale_color_continuous('Zero proportion') +
+    geom_path(aes(log.mu, predict(gam.mod, data.frame(log.mu))),size = 1.5, linetype = 'dashed') +
+    theme_bw() + xlab('Log-Mean') + ylab('Log-Variance') + theme(text = element_text(size=15))
+  print(p)
+
+  message("\t Perform observation-wise variance estimation.")
+  sigma <- log(after +  min(param$mu[param$mu>0]))
+  for(i in 1:N){
+    sigma[,i] <- predict(gam.mod, data.frame(log.mu = sigma[,i])) %>% exp() -  min(param$v[param$v>0])
+  }
+  message("\t Done")
+
+  # Shrink back
+  e <- (before-after)^2
+  lambda<- colMeans(e/(e+sigma),na.rm = T)
+
+  sweep(before,2,lambda,"*") +  sweep(after,2,1-lambda,"*")
 
 }
 
@@ -267,15 +299,25 @@ setMethod("SincastImpute", "Sincast", function(object,
   for (i in 1:t) {
     out <- tcrossprod(out, t(p))
   }
+  out <- as.matrix(out)
 
   message("\t Scaling.")
   out <- MedianScale(
     SeuratObject::GetAssayData(
       object = original,
       layer = "data"
-    ), out
+    )  %>% as.matrix(), out
   )
   message("Finish impute")
+
+  message("Post-scaling.")
+  # out <- PostScale(
+  #   SeuratObject::GetAssayData(
+  #     object = original,
+  #     layer = "data"
+  #   ), out
+  # )
+  message("Finish post-scaling.")
 
   # Get metadata.
   meta.data <- original@meta.data

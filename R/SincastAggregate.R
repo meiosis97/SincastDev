@@ -141,7 +141,7 @@ setMethod("SincastAggregate", "Sincast", function(object,
     tmp.data <- SeuratObject::GetAssayData(
       object = original,
       layer = layer
-    )[, group == g, drop = F]
+    )[, group == g, drop = F] %>% as.matrix()
 
     # Generate pseudobulk.
     out[[g]] <- replicate(
