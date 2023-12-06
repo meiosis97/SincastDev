@@ -1,4 +1,4 @@
 .Rbuildignore
-.Rhistory
 .Rproj.user/
+.Rhistory
 *.md
