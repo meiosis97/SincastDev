@@ -10,7 +10,7 @@ testobj <- SincastImpute(testobj, replace = T)
 
 
 x <- t(testdata@assays$RNA$data)
-test <- RSpectra::svds(x, 100)
+test <- RSpectra::svds(x, 20)
 Xhat <- tcrossprod(test$u %*% diag(test$d), test$v)
 tot.var <- sum(test$d)/sum(x^2)*nrow(x)
 colnames(Xhat) <- colnames(x)
@@ -30,7 +30,7 @@ plot(imp.data[,"CCL3"], x[,"CCL3"])
 plot(Xhat[,"CCL3"], x[,"CCL3"])
 
 
-plot(imp.data[,"CCL3"], imp.data[,"CCL4"])
+plot(imp.data[,"CCL3"], imp.data[,"EGR2"])
 plot(lambda3[,10])
 
 Xres <- x - Xhat
