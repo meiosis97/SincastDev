@@ -58,7 +58,7 @@ ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
 
 
 ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
-  geom_point(aes(umap_1, umap_2, col = X[,gene])) +
+  geom_point(aes(umap_1, umap_2, col = testdata@assays$RNA$data[gene,])) +
   scale_color_gradientn(colours = rev(RColorBrewer::brewer.pal(11,"Spectral")))
 
 ggplot() +

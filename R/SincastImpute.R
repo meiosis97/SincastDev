@@ -42,15 +42,31 @@ Laplacian <- function(aff) {
 }
 
 
-MedianScale <- function(X, Y) {
-  scale.factor <- apply(X, 1, function(x) median(x[x != 0])) /
-      apply(replace(Y, X == 0, NA), 1, function(y) median(y, na.rm = T))
+# MedianScale <- function(X, Y) {
+#   scale.factor <- apply(X, 1, function(x) median(x[x != 0])) /
+#       apply(replace(Y, X == 0, NA), 1, function(y) median(y, na.rm = T))
+#
+#   Y <- Y * scale.factor
+#   Y[is.na(Y)] <- 0
+#   Y
+# }
 
-  Y <- Y * scale.factor
-  Y[is.na(Y)] <- 0
-  Y
+QQScale <- function(before, after) {
+  #QQ regression
+  for(i in 1:nrow(before)){
+    y <- before[i,]
+    x <- after[i,y>0]
+    y <- before[i,y>0]
+    if(length(y)==1){
+      after[i,] <- after[i,]*y/x
+    }else if(length(y)>1){
+      mod <- lm(sort(y)~sort(x))
+      after[i,] <- as.numeric(after[i,] * coef(mod)[2] + coef(mod)[1])
+    }
+  }
+
+  after
 }
-
 
 FindSigma <- function(dk, a, k) {
   lower <- 0
@@ -302,7 +318,7 @@ setMethod("SincastImpute", "Sincast", function(object,
   out <- as.matrix(out)
 
   message("\t Scaling.")
-  out <- MedianScale(
+  out <- QQScale(
     SeuratObject::GetAssayData(
       object = original,
       layer = "data"
