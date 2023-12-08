@@ -1,6 +1,8 @@
 # SincastDev
 A developing version of Sincast
 
+## 2023-12-6
+
 ## 2023-12-5
 1. Initialize coding for SincastAtlas R object.
 2. Added function PostScale for post imputation scaling.
