@@ -4,7 +4,6 @@
 \name{SincastToken-class}
 \alias{SincastToken-class}
 \alias{SincastToken}
-\alias{Sincast}
 \title{An S4 class of \code{SincastToken} object.}
 \description{
 To be added.

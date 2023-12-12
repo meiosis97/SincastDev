@@ -4,9 +4,7 @@
 \name{SincastSummary-class}
 \alias{SincastSummary-class}
 \alias{SincastSummary}
-\alias{Sincast}
 \alias{SincastSummary-validity}
-\alias{Sincast,}
 \title{An S4 class of \code{SincastSummary} object.}
 \description{
 To be added.

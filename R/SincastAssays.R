@@ -14,7 +14,6 @@
 #' @export
 #' @name CheckSincastAssays
 #' @rdname CheckSincastAssays
-#' @aliases Sincast, SincastAssays
 setGeneric("CheckSincastAssays", function(object, test = TRUE, slient = FALSE, ...) {
   standardGeneric("CheckSincastAssays")
 })
@@ -149,7 +148,6 @@ setMethod("GetSincastAssays", "Sincast", function(object,
 #' @export
 #' @name GetSincastAssays
 #' @rdname GetSincastAssays
-#' @aliases Sincast, SincastAssays
 setGeneric("GetSincastAssays<-", function(object, assay = c(
                                             "all", "original",
                                             "pseudobulk", "imputation"
@@ -218,7 +216,6 @@ setMethod("GetSincastAssays<-", "Sincast", function(object, assay = c(
 #' @export
 #' @name CleanSincastAssays
 #' @rdname CleanSincastAssays
-#' @aliases Sincast, SincastAssays
 setGeneric("CleanSincastAssays", function(object,
                                           clean.up = c("none", "all", "pseudobulk", "imputation"),
                                           remove.invalid = TRUE,

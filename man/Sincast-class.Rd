@@ -4,8 +4,6 @@
 \name{Sincast-class}
 \alias{Sincast-class}
 \alias{Sincast}
-\alias{Sincast,}
-\alias{SincastAssays}
 \title{An S4 class of \code{Sincast} object.}
 \description{
 To be added.
@@ -14,6 +12,8 @@ To be added.
 
 \describe{
 \item{\code{SincastAssays}}{A S4 class to store \code{Sincast} aggregation or imputation results.}
+
+\item{\code{SincastAtlas}}{A S4 class to store \code{Sincast} pseudobulk or imputation atlas.}
 
 \item{\code{Summary}}{A \code{SincastSummary} object.}
 }}

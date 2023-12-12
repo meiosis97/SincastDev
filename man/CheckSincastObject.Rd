@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastObject.R
 \name{CheckSincastObject}
 \alias{CheckSincastObject}
-\alias{Sincast,}
-\alias{SincastObject}
 \alias{CheckSincastObject,Sincast-method}
 \title{Check the validity of the \code{Sincast} object.}
 \usage{

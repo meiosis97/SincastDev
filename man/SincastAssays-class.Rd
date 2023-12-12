@@ -4,7 +4,6 @@
 \name{SincastAssays-class}
 \alias{SincastAssays-class}
 \alias{SincastAssays}
-\alias{Sincast,}
 \title{A S4 class to store \code{Sincast} aggregation or imputation results.}
 \description{
 To be added.

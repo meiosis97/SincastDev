@@ -2,9 +2,6 @@
 % Please edit documentation in R/SincastImpute.R
 \name{ImputationPlot}
 \alias{ImputationPlot}
-\alias{Sincast,}
-\alias{SincastAssays,}
-\alias{Seurat}
 \title{Plot the diffusion components computed on the diffusion operator used for \code{Sincast}
 imputation}
 \usage{
@@ -60,6 +57,6 @@ A \code{plotly} object.
 To be added.
 }
 \seealso{
-[SincastImpute()]
+\code{\link[Sincast]{SincastAggregate}()}
 }
 \concept{Sincast plot methods}

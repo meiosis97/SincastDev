@@ -2,9 +2,6 @@
 % Please edit documentation in R/SincastObject.R
 \name{as.Sincast}
 \alias{as.Sincast}
-\alias{Sincast,}
-\alias{SincastObject,}
-\alias{Seurat}
 \alias{as.Sincast,Seurat-method}
 \alias{as.Sincast,Sincast-method}
 \title{Convert a \code{Seurat} object to a \code{Sincast} object.}

@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastAggregate.R
 \name{SincastAggregate}
 \alias{SincastAggregate}
-\alias{Sincast,}
-\alias{SincastAssays}
 \title{Aggregate single cells to generate pseudobulk samples.}
 \usage{
 SincastAggregate(
@@ -70,5 +68,5 @@ A \code{Sincast} object with updated \code{pseudobulk} assay.
 Perform \code{Sincast} aggregation.
 }
 \seealso{
-[SincastImpute()]
+\code{\link[Sincast]{SincastAggregate}()}
 }

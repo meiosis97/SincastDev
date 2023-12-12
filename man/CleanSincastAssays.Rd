@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastAssays.R
 \name{CleanSincastAssays}
 \alias{CleanSincastAssays}
-\alias{Sincast,}
-\alias{SincastAssays}
 \alias{CleanSincastAssays,SincastAssays-method}
 \alias{CleanSincastAssays,Sincast-method}
 \title{Remove unwanted or invalid (i.e, non-\code{Seurat} object) in \code{Sincast} assays

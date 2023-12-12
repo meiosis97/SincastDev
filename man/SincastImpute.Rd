@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastImpute.R
 \name{SincastImpute}
 \alias{SincastImpute}
-\alias{Sincast,}
-\alias{SincastAssays}
 \title{Sincast imputation}
 \usage{
 SincastImpute(
@@ -18,6 +16,9 @@ SincastImpute(
   a = NULL,
   do.laplacian = TRUE,
   norm = c("probabilistic", "average"),
+  do.post.scale = TRUE,
+  preserve.zero = TRUE,
+  lra.control = list(),
   ret.graph = TRUE,
   ndcs = 10,
   replace = FALSE,
@@ -36,6 +37,9 @@ SincastImpute(
   a = NULL,
   do.laplacian = TRUE,
   norm = c("probabilistic", "average"),
+  do.post.scale = TRUE,
+  preserve.zero = TRUE,
+  lra.control = list(),
   ret.graph = TRUE,
   ndcs = 10,
   replace = FALSE,
@@ -67,6 +71,16 @@ a > 1 represents the sum of probabilities of a cell communicating with its k nea
 
 \item{norm}{How to symmetrize the affinity matrix. Default is Probabilistic t-norm. The other option is 'average'.}
 
+\item{do.post.scale}{Logical; if TRUE, perform post-imputation scaling, which match the scale of \code{Sincast} imputed data
+with the data imputed by low rank approximation (See \code{\link[Sincast]{LowRankApprox}}). After scale matching,
+the average of the low rank approximation and the scaled \code{Sincast} imputation will be returned as the final imputed
+data.}
+
+\item{preserve.zero}{Logical; if TRUE, perform zero-preserving low rank approximation on the \code{Sincast} imputed data.
+(See \code{\link[Sincast]{LowRankApprox}}).}
+
+\item{lra.control}{A list of controls for \code{\link[Sincast]{LowRankApprox}}.}
+
 \item{ret.graph}{Logical; if TRUE, return the diffusion operator and store it in the \code{graph} slot of the imputation assay.}
 
 \item{ndcs}{Calculate \code{ndcs} number of diffusion components by eigen decomposing the diffusion operator.
@@ -81,5 +95,5 @@ A \code{Sincast} object with updated \code{imputation} assay.
 Perform Sincast imputation.
 }
 \seealso{
-[SincastAggregate()]
+\code{\link[Sincast]{SincastAggregate}()}, \code{\link[Sincast]{LowRankApprox}()}
 }

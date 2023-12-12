@@ -4,7 +4,6 @@
 \name{SincastAtlas-class}
 \alias{SincastAtlas-class}
 \alias{SincastAtlas}
-\alias{Sincast,}
 \title{A S4 class to store \code{Sincast} pseudobulk or imputation atlas}
 \description{
 To be added.

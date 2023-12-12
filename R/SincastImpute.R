@@ -66,37 +66,24 @@ FindSigma <- function(dk, a, k) {
 }
 
 
-QQSCale <- function(before, after){
-  for(i in 1:nrow(before)){
-    y <- before[i,]
-    x <- after[i,]
-    npos <- sum(y>0)
-    if(npos>1){
-      mod <-  lm(sort(y)~  0+sort(x))
-      after[i,] <- as.numeric(after[i,] * coef(mod)[1])
+QQSCale <- function(Y, X){
+  n <- ncol(Y)
+  if(n > 1000){
+    q <- seq(0,1,length.out = n/10)
+  }
+
+  for(i in 1:nrow(Y)){
+    if(n > 1000){
+      y <- quantile(Y[i,], q)
+      x <- quantile(X[i,], q)
+    }else{
+      y <- sort(Y[i,])
+      x <- sort(X[i,])
     }
+    mod <-  lm(y~0+x)
+    X[i,] <- as.numeric( X[i,] * coef(mod)[1] )
   }
-  after
-}
-
-
-PostScale <- function(before, after,
-                      do.scale = TRUE,
-                      rank = NULL,
-                      do.rsvd = TRUE,
-                      seed = 521616,
-                      q = 0.9, ...){
-  after <- LowRankApprox(after,rank = rank, do.rsvd = do.rsvd,
-                         seed = seed, q = q, ...)
-  if(do.scale){
-    before <- LowRankApprox(beofore, rank = rank, do.rsvd = do.rsvd,
-                            seed = seed, q = q, ...)
-    after <- QQSCale(before, after)
-    after <- (before + after)/2
-    return(after)
-  }else{
-    return(before)
-  }
+  X
 }
 
 
@@ -125,19 +112,22 @@ PostScale <- function(before, after,
 LowRankApprox <-  function(x,
                            rank = NULL,
                            do.rsvd = TRUE,
-                           seed = 521616,
+                           seed = 521626,
                            q = 0.9, ...){
   x <- t(x)
 
   # Number of components to calculate.
   if(is.null(rank)){
     rank <- 100
-    k <- 100
-  }else if(rank < 100){
-    warning("'rank' should be a numeric larger than 100, reset rank to 100")
+  }else if(!is.numeric(rank)){
+    warning("rank is not a numeric larger than 100, reset rank to 100")
     rank <- 100
-    k <- rank
+  }else if(rank < 100){
+    warning("ran' is not a numeric larger than 100, reset rank to 100")
+    rank <- 100
   }
+
+  k <- rank
 
   # Single Value decomposition
   if(do.rsvd){
@@ -149,8 +139,8 @@ LowRankApprox <-  function(x,
 
   # Determine the number of rank to use if rank is not given
   s <- abs(diff(svd.x$d))
-  mu <- mean(s[(0.8*k):k])
-  sigma <- sd(s[(0.8*k):k])
+  mu <- mean(s[(0.8*k):k-1])
+  sigma <- sd(s[(0.8*k):k-1])
   sk <- mu + 6*sigma
   k <- which(s < sk)[1]
   if(length(k)==0){
@@ -168,7 +158,7 @@ LowRankApprox <-  function(x,
   } )
 
   dimnames(x.lra) <- dimnames(x)
-  x.lra
+  t(x.lra)
 
 }
 
@@ -193,6 +183,13 @@ LowRankApprox <-  function(x,
 #'        a > 1 represents the sum of probabilities of a cell communicating with its k nearest neighbors.
 #' @param do.laplacian Logical; if TRUE, perform Laplacian normalization on the affinity matrix.
 #' @param norm How to symmetrize the affinity matrix. Default is Probabilistic t-norm. The other option is 'average'.
+#' @param do.post.scale Logical; if TRUE, perform post-imputation scaling, which match the scale of \code{Sincast} imputed data
+#' with the data imputed by low rank approximation (See \code{\link[Sincast]{LowRankApprox}}). After scale matching,
+#' the average of the low rank approximation and the scaled \code{Sincast} imputation will be returned as the final imputed
+#' data.
+#' @param preserve.zero Logical; if TRUE, perform zero-preserving low rank approximation on the \code{Sincast} imputed data.
+#' (See \code{\link[Sincast]{LowRankApprox}}).
+#' @param lra.control A list of controls for \code{\link[Sincast]{LowRankApprox}}.
 #' @param ret.graph Logical; if TRUE, return the diffusion operator and store it in the \code{graph} slot of the imputation assay.
 #' @param ndcs Calculate \code{ndcs} number of diffusion components by eigen decomposing the diffusion operator.
 #'        Resulting cell embedding is stored in the \code{reduction} slot of the imputation assay.
@@ -200,12 +197,11 @@ LowRankApprox <-  function(x,
 #'
 #' @return A \code{Sincast} object with updated \code{imputation} assay.
 #'
-#' @seealso [SincastAggregate()]
+#' @seealso \code{\link[Sincast]{SincastAggregate}()}, \code{\link[Sincast]{LowRankApprox}()}
 #'
 #' @export
 #' @name SincastImpute
 #' @rdname SincastImpute
-#' @aliases Sincast, SincastAssays
 setGeneric("SincastImpute", function(object,
                                      assay = NULL,
                                      features = NULL,
@@ -217,6 +213,9 @@ setGeneric("SincastImpute", function(object,
                                      a = NULL,
                                      do.laplacian = TRUE,
                                      norm = c("probabilistic", "average"),
+                                     do.post.scale = TRUE,
+                                     preserve.zero = TRUE,
+                                     lra.control = list(),
                                      ret.graph = TRUE,
                                      ndcs = 10,
                                      replace = FALSE, ...) {
@@ -238,6 +237,9 @@ setMethod("SincastImpute", "Sincast", function(object,
                                                a = NULL,
                                                do.laplacian = TRUE,
                                                norm = c("probabilistic", "average"),
+                                               do.post.scale = TRUE,
+                                               preserve.zero = TRUE,
+                                               lra.control = list(),
                                                ret.graph = TRUE,
                                                ndcs = 10,
                                                replace = FALSE, ...) {
@@ -337,26 +339,35 @@ setMethod("SincastImpute", "Sincast", function(object,
 
   for (i in 1:t) {
     out <- tcrossprod(out, t(p))
+
   }
   out <- as.matrix(out)
 
-  message("\t Scaling.")
-  # out <- MedianScale(
-  #   SeuratObject::GetAssayData(
-  #     object = original,
-  #     layer = "data"
-  #   )  %>% as.matrix(), out
-  # )
-  message("Finish impute")
+  if(preserve.zero){
+    message("\t Zero-preserving low rank approximation.")
+    if(!is.list(lra.control)){
+      warning("lra.control is not a list. Using the default control.")
+      lra.control <- list()
+    }
+    lra.control[["x"]] <- out
+    out <- do.call(Sincast::LowRankApprox, lra.control)
+  }
 
-  message("Post-scaling.")
-  # out <- PostScale(
-  #   SeuratObject::GetAssayData(
-  #     object = original,
-  #     layer = "data"
-  #   ), out
-  # )
-  message("Finish post-scaling.")
+  if(do.post.scale){
+    message("\t Post-scaling.")
+    if(!is.list(lra.control)){
+      warning("lra.control is not a list. Using the default control.")
+      lra.control <- list()
+    }
+    lra.control[["x"]] <- SeuratObject::GetAssayData(
+      object = original,
+      layer = "data"
+    )
+    lra.original <- do.call(Sincast::LowRankApprox, lra.control)
+    out <- QQSCale(lra.original, out)
+    out <- (lra.original + out)/2
+  }
+  message("Finish impute")
 
   # Get metadata.
   meta.data <- original@meta.data
@@ -419,7 +430,7 @@ setMethod("SincastImpute", "Sincast", function(object,
 
   message("Constructing diffusion map.")
   if (!is.null(ndcs)) {
-    s <- eigs(p, k = ndcs + 1, method = "LR")
+    s <- RSpectra::eigs(p, k = ndcs + 1, method = "LR")
     s$values <- Re(s$values)
     s$vectors <- Re(s$vectors)
     dc <- sweep(s$vectors, 2, s$values^t, "*")
@@ -463,14 +474,13 @@ setMethod("SincastImpute", "Sincast", function(object,
 #'
 #' @return A \code{plotly} object.
 #'
-#' @seealso [SincastImpute()]
+#' @seealso \code{\link[Sincast]{SincastAggregate}()}
 #'
 #' @family Sincast plot methods
 #'
 #' @export
 #' @name ImputationPlot
 #' @rdname ImputationPlot
-#' @aliases Sincast, SincastAssays, Seurat
 setGeneric("ImputationPlot", function(object,
                                       dims = 1:3,
                                       cells = NULL,

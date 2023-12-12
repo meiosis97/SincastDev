@@ -14,7 +14,6 @@
 #' @export
 #' @name CheckSincastAtlas
 #' @rdname CheckSincastAtlas
-#' @aliases Sincast, SincastAtlas
 setGeneric("CheckSincastAtlas", function(object, test = TRUE, slient = FALSE, ...) {
   standardGeneric("CheckSincastAtlas")
 })
@@ -91,7 +90,6 @@ setMethod("CheckSincastAtlas", "Sincast", function(object, test = TRUE, silent =
 #' @export
 #' @name GetSincastAtlas
 #' @rdname GetSincastAtlas
-#' @aliases Sincast, SincastAtlas
 setGeneric("GetSincastAtlas", function(object, atlas = c(
   "all", "original",
   "pseudobulk", "imputation"
@@ -149,7 +147,6 @@ setMethod("GetSincastAtlas", "Sincast", function(object,
 #' @export
 #' @name GetSincastAtlas
 #' @rdname GetSincastAtlas
-#' @aliases Sincast, SincastAtlas
 setGeneric("GetSincastAtlas<-", function(object, atlas = c(
   "all", "original",
   "pseudobulk", "imputation"
@@ -219,7 +216,6 @@ setMethod("GetSincastAtlas<-", "Sincast", function(object, atlas = c(
 #' @export
 #' @name CleanSincastAtlas
 #' @rdname CleanSincastAtlas
-#' @aliases Sincast, SincastAtlas
 setGeneric("CleanSincastAtlas", function(object,
                                           clean.up = c("none", "all", "original", "pseudobulk", "imputation"),
                                           remove.invalid = TRUE,

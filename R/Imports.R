@@ -7,7 +7,10 @@ NULL
 #' @importFrom magrittr `%>%`
 NULL
 
-#' @importFrom RSpectra eigs
+#' @import RSpectra
+NULL
+
+#' @import rsvd
 NULL
 
 #' @import plotly

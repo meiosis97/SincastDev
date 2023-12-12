@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastAtlas.R
 \name{CleanSincastAtlas}
 \alias{CleanSincastAtlas}
-\alias{Sincast,}
-\alias{SincastAtlas}
 \alias{CleanSincastAtlas,SincastAtlas-method}
 \alias{CleanSincastAtlas,Sincast-method}
 \title{Remove unwanted or invalid (i.e, non-\code{Seurat} object) \code{Sincast} atlas

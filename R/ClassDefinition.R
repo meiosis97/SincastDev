@@ -15,7 +15,6 @@
 #'
 #' @name SincastToken-class
 #' @rdname SincastToken-class
-#' @aliases Sincast
 SincastToken <- setClass(
   Class = "SincastToken",
   slots = list(
@@ -41,7 +40,6 @@ SincastToken <- setClass(
 #'
 #' @name SincastSummary-class
 #' @rdname SincastSummary-class
-#' @aliases Sincast
 SincastSummary <- setClass(
   Class = "SincastSummary",
   slots = list(
@@ -55,7 +53,6 @@ SincastSummary <- setClass(
 #'
 #' @name SincastSummary-validity
 #' @rdname SincastSummary-class
-#' @aliases Sincast, SincastSummary
 setValidity(
   Class = "SincastSummary",
   method = function(object) {
@@ -96,7 +93,6 @@ setValidity(
 #'
 #' @name SincastAssays-class
 #' @rdname SincastAssays-class
-#' @aliases Sincast, SincastAssays
 SincastAssays <- setClass(
   Class = "SincastAssays",
   slots = list(
@@ -122,7 +118,6 @@ SincastAssays <- setClass(
 #'
 #' @name SincastAtlas-class
 #' @rdname SincastAtlas-class
-#' @aliases Sincast, SincastAtlas
 SincastAtlas <- setClass(
   Class = "SincastAtlas",
   slots = list(
@@ -141,13 +136,13 @@ SincastAtlas <- setClass(
 #' To be added.
 #'
 #' @slot SincastAssays A S4 class to store \code{Sincast} aggregation or imputation results.
+#' @slot SincastAtlas A S4 class to store \code{Sincast} pseudobulk or imputation atlas.
 #' @slot Summary A \code{SincastSummary} object.
 #'
 #' @family Sincast classes
 #'
 #' @name Sincast-class
 #' @rdname Sincast-class
-#' @aliases Sincast, SincastAssays
 Sincast <- setClass(
   Class = "Sincast",
   slots = list(

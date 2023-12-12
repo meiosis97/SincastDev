@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastAtlas.R
 \name{GetSincastAtlas}
 \alias{GetSincastAtlas}
-\alias{Sincast,}
-\alias{SincastAtlas}
 \alias{GetSincastAtlas,Sincast-method}
 \alias{GetSincastAtlas<-,Sincast-method}
 \title{Extract the \code{SincastAtlas} object from a \code{Sincast} object.}

@@ -2,10 +2,51 @@ library("Sincast")
 require(Matrix)
 require(dplyr)
 require(ggplot2)
+require(plotly)
 testdata <- readRDS(file = 'C:/Users/yidid/SincastDev/data/testdata.rds')
 testobj <- as.Sincast(testdata)
-testobj <- SincastImpute(testobj, replace = T)
+testobj <- SincastImpute(testobj, replace = T, do.post.scale = F)
 testobj <- SincastAggregate(testobj, replace = T, size.factor = 10,n.pool = 30)
+
+rankTrans <- function(data){
+  (apply(data,2,rank, ties.method = 'min')-1)/(nrow(data) - 1)
+}
+
+pca<-prcomp(t(rankTrans(testobj[["pseudobulk"]]@assays$RNA$counts)))
+predicted <- predict(pca, t(rankTrans(testobj[["imputation"]]@assays$RNA$counts)))
+ggplot()+geom_point(data = data.frame(pca$x), aes(PC1,PC2, col = substr(testobj[["pseudobulk"]]$agg.label, 1,1)))+
+  geom_point(data = data.frame(predicted), aes(PC1,PC2, col = testobj[["imputation"]]$seurat_clusters), shape = "x")
+plot_ly() %>% add_trace(data = data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color =  substr(testobj[["pseudobulk"]]$agg.label, 1,1)) %>%
+  add_trace(data = data.frame(predicted), x = ~PC1, y = ~PC2, z = ~PC3, color = testobj[["imputation"]]$seurat_clusters,  marker = list(symbol = "x"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -49,11 +90,11 @@ colnames(x.lra) <- colnames(x.hat) <- colnames(x.imp.lra) <- colnames(x)
 svd.x.imp <- RSpectra::svds(x, 100)
 
 
+RSpectra::
 
 
 
-
-mu <- apply(x,2,mean)
+  mu <- apply(x,2,mean)
 sigma <- apply(x,2,sd)
 plot(log(mu),log(sigma))
 

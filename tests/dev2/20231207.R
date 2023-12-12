@@ -24,6 +24,14 @@ ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
   geom_point(aes(umap_1, umap_2, col = imp.data[,"EGR2"])) +
   scale_color_gradientn(colours = rev(RColorBrewer::brewer.pal(11,"Spectral")))
 
+ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
+  geom_point(aes(umap_1, umap_2, col = Xhat[,"CCL3"])) +
+  scale_color_gradientn(colours = rev(RColorBrewer::brewer.pal(11,"Spectral")))
+
+ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
+  geom_point(aes(umap_1, umap_2, col = t(testobj[["imputation"]]@assays$RNA$counts)[,"CCL3"])) +
+  scale_color_gradientn(colours = rev(RColorBrewer::brewer.pal(11,"Spectral")))
+
 
 plot(t(testobj[["imputation"]]@assays$RNA$counts)[,"CCL3"], x[,"CCL3"])
 plot(imp.data[,"CCL3"], x[,"CCL3"])

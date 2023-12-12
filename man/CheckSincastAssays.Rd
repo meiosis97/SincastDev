@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastAssays.R
 \name{CheckSincastAssays}
 \alias{CheckSincastAssays}
-\alias{Sincast,}
-\alias{SincastAssays}
 \alias{CheckSincastAssays,SincastAssays-method}
 \alias{CheckSincastAssays,Sincast-method}
 \title{Check the validity of the \code{SincastAssays} object of \code{Sincast}.}

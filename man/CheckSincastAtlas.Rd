@@ -2,8 +2,6 @@
 % Please edit documentation in R/SincastAtlas.R
 \name{CheckSincastAtlas}
 \alias{CheckSincastAtlas}
-\alias{Sincast,}
-\alias{SincastAtlas}
 \alias{CheckSincastAtlas,SincastAtlas-method}
 \alias{CheckSincastAtlas,Sincast-method}
 \title{Check the validity of the \code{SincastAtlas} object of \code{Sincast}.}

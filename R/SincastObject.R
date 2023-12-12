@@ -14,7 +14,6 @@
 #' @export
 #' @name as.Sincast
 #' @rdname as.Sincast
-#' @aliases Sincast, SincastObject, Seurat
 setGeneric("as.Sincast", function(object, ...) {
   standardGeneric("as.Sincast")
 })
@@ -63,7 +62,6 @@ setMethod("as.Sincast", "Sincast", function(object, ...) {
 #' @export
 #' @name CheckSincastObject
 #' @rdname CheckSincastObject
-#' @aliases Sincast, SincastObject
 setGeneric("CheckSincastObject", function(object, test = TRUE,
                                           complete = TRUE, slient = FALSE, ...) {
   standardGeneric("CheckSincastObject")
