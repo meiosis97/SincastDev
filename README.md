@@ -23,6 +23,7 @@ A developing version of Sincast
 6. local -> stage -> local repository -> remote repository
 7.  .gitingore cannot ignoure files that are already committed in the repository, to ignore these files, they need to be deleted from the repository by `git git rm --cached filename`
 8. `git push` will return an error if the remote repository contains a file that are not found in the local repository, and the file is not logged to be deleted. 
+9. `git push` will return an error if the remote repository is not the same as the local repository before commitment???
 
 ## 2023-12-5
 1. Initialize coding for SincastAtlas R object.
