@@ -42,16 +42,6 @@ Laplacian <- function(aff) {
 }
 
 
-MedianScale <- function(X, Y) {
-  scale.factor <- apply(X, 1, function(x) median(x[x != 0])) /
-      apply(replace(Y, X == 0, NA), 1, function(y) median(y, na.rm = T))
-
-  Y <- Y * scale.factor
-  Y[is.na(Y)] <- 0
-  Y
-}
-
-
 FindSigma <- function(dk, a, k) {
   lower <- 0
   upper <- Inf
@@ -75,67 +65,116 @@ FindSigma <- function(dk, a, k) {
   cur
 }
 
-PostScale <- function(before, after){
-  after <- as.matrix(after)
-  N <- ncol(before)
-  G <- nrow(before)
-  q <- ppoints(N) %>% qnorm()
-  w <- rowMeans(before!=0)
 
-  # Gene-wise mean and variance estimate on expressed genes.
-  message("\t Genewise Mean and Variance estimation on imputed data.")
-  mu <-c()
-  v <- c()
-  for(i in 1:G){
-    qx <- sort(after[i,])
-    if(sum(qx > 0)){
-      lmod <- lm(qx~q, subset = qx > 0)
-      mu[i] <- lmod$coefficients[1]
-      v[i] <- lmod$coefficients[2]^2
-    }else{
-      mu[i] <- 0
-      v[i] <- 0
+QQSCale <- function(before, after){
+  for(i in 1:nrow(before)){
+    y <- before[i,]
+    x <- after[i,]
+    npos <- sum(y>0)
+    if(npos>1){
+      mod <-  lm(sort(y)~  0+sort(x))
+      after[i,] <- as.numeric(after[i,] * coef(mod)[1])
     }
   }
-  param <- data.frame(mu = mu, v = v, w = w)
-  message("\t Done")
-
-  # Estimate mean and variance trend.
-  param$log.mu <- log(param$mu + min(param$mu[param$mu>0]))
-  param$log.v <- log(param$mu + min(param$v[param$v>0]))
-
-  message("\t Now perform GAM fit.")
-  k <- 3
-  gam.mod <- mgcv::gam(log.v~s(log.mu, k = k, bs = 'cr'), weights = w, data = param)
-  # while(mgcv::k.check(gam.mod)[,4] < 0.05){
-  #   k <- k + 2
-  #   gam.mod <- mgcv::gam(log.v~s(log.mu, k = k, bs = 'cr'), weights = w, data = param)
-  # }
-  message("\t Finish regress. The basis dimension is ", k)
-
-  p <- ggplot(data = param) + geom_point(aes(log.mu, log.v, col = w))+
-    scale_color_continuous('Zero proportion') +
-    geom_path(aes(log.mu, predict(gam.mod, data.frame(log.mu))),size = 1.5, linetype = 'dashed') +
-    theme_bw() + xlab('Log-Mean') + ylab('Log-Variance') + theme(text = element_text(size=15))
-  print(p)
-
-  message("\t Perform observation-wise variance estimation.")
-  sigma <- log(after +  min(param$mu[param$mu>0]))
-  for(i in 1:N){
-    sigma[,i] <- predict(gam.mod, data.frame(log.mu = sigma[,i])) %>% exp() -  min(param$v[param$v>0])
-  }
-  message("\t Done")
-
-  # Shrink back
-  e <- (before-after)^2
-  lambda<- colMeans(e/(e+sigma),na.rm = T)
-
-  sweep(before,2,lambda,"*") +  sweep(after,2,1-lambda,"*")
-
+  after
 }
+
+
+PostScale <- function(before, after,
+                      do.scale = TRUE,
+                      rank = NULL,
+                      do.rsvd = TRUE,
+                      seed = 521616,
+                      q = 0.9, ...){
+  after <- LowRankApprox(after,rank = rank, do.rsvd = do.rsvd,
+                         seed = seed, q = q, ...)
+  if(do.scale){
+    before <- LowRankApprox(beofore, rank = rank, do.rsvd = do.rsvd,
+                            seed = seed, q = q, ...)
+    after <- QQSCale(before, after)
+    after <- (before + after)/2
+    return(after)
+  }else{
+    return(before)
+  }
+}
+
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Exported
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' Low rank approximation.
+#'
+#' Perform the scRNA-seq low rank approximation method proposed by
+#' \href{https://www.nature.com/articles/s41467-021-27729-z}{George C. Linderman (2022, nat communication)}.
+#' The major contribution of the method is that it can perform imputation while preserve biological zeros.
+#'
+#' @param x a non-negative feature-by-cell matrix.
+#' @param rank The rank of the approximating matrix of \code{x}. If \code{NULL}, it will be determined by the approach proposed by Linderman et al (2022).
+#' @param do.rsvd Logical; If TRUE, perform random single value decomposition.
+#' @param seed The random seed for random SVD if do.rsvd = TRUE.
+#' @param q If a svd-approximation of a feature contains negative values, calculate the qth smallest negative value. Any imputed expression that are lower
+#' than the absolute of this value is set to zero.
+#'
+#' @return A low rank approximation of \code{x}
+#'
+#' @export
+#'
+#' @name LowRankApprox
+#' @rdname LowRankApprox
+LowRankApprox <-  function(x,
+                           rank = NULL,
+                           do.rsvd = TRUE,
+                           seed = 521616,
+                           q = 0.9, ...){
+  x <- t(x)
+
+  # Number of components to calculate.
+  if(is.null(rank)){
+    rank <- 100
+    k <- 100
+  }else if(rank < 100){
+    warning("'rank' should be a numeric larger than 100, reset rank to 100")
+    rank <- 100
+    k <- rank
+  }
+
+  # Single Value decomposition
+  if(do.rsvd){
+    set.seed(seed)
+    svd.x <- rsvd::rsvd(x, k, ...)
+  }else{
+    svd.x <- RSpectra::svds(x, k, ...)
+  }
+
+  # Determine the number of rank to use if rank is not given
+  s <- abs(diff(svd.x$d))
+  mu <- mean(s[(0.8*k):k])
+  sigma <- sd(s[(0.8*k):k])
+  sk <- mu + 6*sigma
+  k <- which(s < sk)[1]
+  if(length(k)==0){
+    warning(rank, " ranks could be insufficient to approximate the data.")
+    k <- rank
+  }
+
+  # Low rank approximation
+  x.lra <- tcrossprod(x %*% svd.x$v[,1:k], svd.x$v[,1:k])
+
+  # Restore biological zeros.
+  x.lra <- apply(x.lra, 2, function(x){
+    x[x<abs(quantile(x[x<0], 1-q))] <- 0
+    x
+  } )
+
+  dimnames(x.lra) <- dimnames(x)
+  x.lra
+
+}
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# SincastImpute
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #' Sincast imputation
 #'
@@ -302,12 +341,12 @@ setMethod("SincastImpute", "Sincast", function(object,
   out <- as.matrix(out)
 
   message("\t Scaling.")
-  out <- MedianScale(
-    SeuratObject::GetAssayData(
-      object = original,
-      layer = "data"
-    )  %>% as.matrix(), out
-  )
+  # out <- MedianScale(
+  #   SeuratObject::GetAssayData(
+  #     object = original,
+  #     layer = "data"
+  #   )  %>% as.matrix(), out
+  # )
   message("Finish impute")
 
   message("Post-scaling.")
