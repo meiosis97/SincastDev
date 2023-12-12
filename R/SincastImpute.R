@@ -42,32 +42,6 @@ Laplacian <- function(aff) {
 }
 
 
-# MedianScale <- function(X, Y) {
-#   scale.factor <- apply(X, 1, function(x) median(x[x != 0])) /
-#       apply(replace(Y, X == 0, NA), 1, function(y) median(y, na.rm = T))
-#
-#   Y <- Y * scale.factor
-#   Y[is.na(Y)] <- 0
-#   Y
-# }
-
-QQScale <- function(before, after) {
-  #QQ regression
-  for(i in 1:nrow(before)){
-    y <- before[i,]
-    x <- after[i,y>0]
-    y <- before[i,y>0]
-    if(length(y)==1){
-      after[i,] <- after[i,]*y/x
-    }else if(length(y)>1){
-      mod <- lm(sort(y)~sort(x))
-      after[i,] <- as.numeric(after[i,] * coef(mod)[2] + coef(mod)[1])
-    }
-  }
-
-  after
-}
-
 FindSigma <- function(dk, a, k) {
   lower <- 0
   upper <- Inf
@@ -91,67 +65,106 @@ FindSigma <- function(dk, a, k) {
   cur
 }
 
-PostScale <- function(before, after){
-  after <- as.matrix(after)
-  N <- ncol(before)
-  G <- nrow(before)
-  q <- ppoints(N) %>% qnorm()
-  w <- rowMeans(before!=0)
 
-  # Gene-wise mean and variance estimate on expressed genes.
-  message("\t Genewise Mean and Variance estimation on imputed data.")
-  mu <-c()
-  v <- c()
-  for(i in 1:G){
-    qx <- sort(after[i,])
-    if(sum(qx > 0)){
-      lmod <- lm(qx~q, subset = qx > 0)
-      mu[i] <- lmod$coefficients[1]
-      v[i] <- lmod$coefficients[2]^2
+QQSCale <- function(Y, X){
+  n <- ncol(Y)
+  if(n > 1000){
+    q <- seq(0,1,length.out = n/10)
+  }
+
+  for(i in 1:nrow(before)){
+    if(n > 1000){
+      y <- quantile(Y[i,], q)
+      x <- quantile(X[i,], q)
     }else{
-      mu[i] <- 0
-      v[i] <- 0
+      y <- sort(Y[i,])
+      x <- sort(X[i,])
     }
+    mod <-  lm(y~0+x)
+    X[i,] <- as.numeric( X[i,] * coef(mod)[1] )
   }
-  param <- data.frame(mu = mu, v = v, w = w)
-  message("\t Done")
-
-  # Estimate mean and variance trend.
-  param$log.mu <- log(param$mu + min(param$mu[param$mu>0]))
-  param$log.v <- log(param$mu + min(param$v[param$v>0]))
-
-  message("\t Now perform GAM fit.")
-  k <- 3
-  gam.mod <- mgcv::gam(log.v~s(log.mu, k = k, bs = 'cr'), weights = w, data = param)
-  # while(mgcv::k.check(gam.mod)[,4] < 0.05){
-  #   k <- k + 2
-  #   gam.mod <- mgcv::gam(log.v~s(log.mu, k = k, bs = 'cr'), weights = w, data = param)
-  # }
-  message("\t Finish regress. The basis dimension is ", k)
-
-  p <- ggplot(data = param) + geom_point(aes(log.mu, log.v, col = w))+
-    scale_color_continuous('Zero proportion') +
-    geom_path(aes(log.mu, predict(gam.mod, data.frame(log.mu))),size = 1.5, linetype = 'dashed') +
-    theme_bw() + xlab('Log-Mean') + ylab('Log-Variance') + theme(text = element_text(size=15))
-  print(p)
-
-  message("\t Perform observation-wise variance estimation.")
-  sigma <- log(after +  min(param$mu[param$mu>0]))
-  for(i in 1:N){
-    sigma[,i] <- predict(gam.mod, data.frame(log.mu = sigma[,i])) %>% exp() -  min(param$v[param$v>0])
-  }
-  message("\t Done")
-
-  # Shrink back
-  e <- (before-after)^2
-  lambda<- colMeans(e/(e+sigma),na.rm = T)
-
-  sweep(before,2,lambda,"*") +  sweep(after,2,1-lambda,"*")
-
+  X
 }
+
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Exported
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' Low rank approximation.
+#'
+#' Perform the scRNA-seq low rank approximation method proposed by
+#' \href{https://www.nature.com/articles/s41467-021-27729-z}{George C. Linderman (2022, nat communication)}.
+#' The major contribution of the method is that it can perform imputation while preserve biological zeros.
+#'
+#' @param x a non-negative feature-by-cell matrix.
+#' @param rank The rank of the approximating matrix of \code{x}. If \code{NULL}, it will be determined by the approach proposed by Linderman et al (2022).
+#' @param do.rsvd Logical; If TRUE, perform random single value decomposition.
+#' @param seed The random seed for random SVD if do.rsvd = TRUE.
+#' @param q If a svd-approximation of a feature contains negative values, calculate the qth smallest negative value. Any imputed expression that are lower
+#' than the absolute of this value is set to zero.
+#'
+#' @return A low rank approximation of \code{x}
+#'
+#' @export
+#'
+#' @name LowRankApprox
+#' @rdname LowRankApprox
+LowRankApprox <-  function(x,
+                           rank = NULL,
+                           do.rsvd = TRUE,
+                           seed = 521626,
+                           q = 0.9, ...){
+  x <- t(x)
+
+  # Number of components to calculate.
+  if(is.null(rank)){
+    rank <- 100
+  }else if(!is.numeric(rank)){
+    warning("rank is not a numeric larger than 100, reset rank to 100")
+    rank <- 100
+  }else if(rank < 100){
+    warning("ran' is not a numeric larger than 100, reset rank to 100")
+    rank <- 100
+  }
+
+  k <- rank
+
+  # Single Value decomposition
+  if(do.rsvd){
+    set.seed(seed)
+    svd.x <- rsvd::rsvd(x, k, ...)
+  }else{
+    svd.x <- RSpectra::svds(x, k, ...)
+  }
+
+  # Determine the number of rank to use if rank is not given
+  s <- abs(diff(svd.x$d))
+  mu <- mean(s[(0.8*k):k])
+  sigma <- sd(s[(0.8*k):k])
+  sk <- mu + 6*sigma
+  k <- which(s < sk)[1]
+  if(length(k)==0){
+    warning(rank, " ranks could be insufficient to approximate the data.")
+    k <- rank
+  }
+
+  # Low rank approximation
+  x.lra <- tcrossprod(x %*% svd.x$v[,1:k], svd.x$v[,1:k])
+
+  # Restore biological zeros.
+  x.lra <- apply(x.lra, 2, function(x){
+    x[x<abs(quantile(x[x<0], 1-q))] <- 0
+    x
+  } )
+
+  dimnames(x.lra) <- dimnames(x)
+  x.lra
+
+}
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# SincastImpute
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #' Sincast imputation
 #'
@@ -170,6 +183,13 @@ PostScale <- function(before, after){
 #'        a > 1 represents the sum of probabilities of a cell communicating with its k nearest neighbors.
 #' @param do.laplacian Logical; if TRUE, perform Laplacian normalization on the affinity matrix.
 #' @param norm How to symmetrize the affinity matrix. Default is Probabilistic t-norm. The other option is 'average'.
+#' @param do.post.scale Logical; if TRUE, perform post-imputation scaling, which match the scale of \code{Sincast} imputed data
+#' with the data imputed by low rank approximation (See \code{\link[Sincast]{LowRankApprox}}). After scale matching,
+#' the average of the low rank approximation and the scaled \code{Sincast} imputation will be returned as the final imputed
+#' data.
+#' @param preserve.zero Logical; if TRUE, perform zero-preserving low rank approximation on the \code{Sincast} imputed data.
+#' (See \code{\link[Sincast]{LowRankApprox}}).
+#' @param lra.control A list of controls for \code{\link[Sincast]{LowRankApprox}}.
 #' @param ret.graph Logical; if TRUE, return the diffusion operator and store it in the \code{graph} slot of the imputation assay.
 #' @param ndcs Calculate \code{ndcs} number of diffusion components by eigen decomposing the diffusion operator.
 #'        Resulting cell embedding is stored in the \code{reduction} slot of the imputation assay.
@@ -177,7 +197,7 @@ PostScale <- function(before, after){
 #'
 #' @return A \code{Sincast} object with updated \code{imputation} assay.
 #'
-#' @seealso [SincastAggregate()]
+#' @seealso \code{\link[Sincast]{SincastAggregate}()}, \code{\link[Sincast]{LowRankApprox}()}
 #'
 #' @export
 #' @name SincastImpute
@@ -194,6 +214,9 @@ setGeneric("SincastImpute", function(object,
                                      a = NULL,
                                      do.laplacian = TRUE,
                                      norm = c("probabilistic", "average"),
+                                     do.post.scale = TRUE,
+                                     preserve.zero = TRUE,
+                                     lra.control = list(),
                                      ret.graph = TRUE,
                                      ndcs = 10,
                                      replace = FALSE, ...) {
@@ -215,6 +238,9 @@ setMethod("SincastImpute", "Sincast", function(object,
                                                a = NULL,
                                                do.laplacian = TRUE,
                                                norm = c("probabilistic", "average"),
+                                               do.post.scale = TRUE,
+                                               preserve.zero = TRUE,
+                                               lra.control = list(),
                                                ret.graph = TRUE,
                                                ndcs = 10,
                                                replace = FALSE, ...) {
@@ -314,26 +340,35 @@ setMethod("SincastImpute", "Sincast", function(object,
 
   for (i in 1:t) {
     out <- tcrossprod(out, t(p))
+
   }
   out <- as.matrix(out)
 
-  message("\t Scaling.")
-  out <- QQScale(
-    SeuratObject::GetAssayData(
+  if(preserve.zero){
+    message("\t Zero-preserving low rank approximation.")
+    if(!is.list(lra.control)){
+      warning("lra.control is not a list. Using the default control.")
+      lra.control <- list()
+    }
+    lra.control[["x"]] <- out
+    out <- do.call(Sincast::LowRankApprox, lra.control)
+  }
+
+  if(do.post.scale){
+    message("\t Post-scaling.")
+    if(!is.list(lra.control)){
+      warning("lra.control is not a list. Using the default control.")
+      lra.control <- list()
+    }
+    lra.control[["x"]] <- SeuratObject::GetAssayData(
       object = original,
       layer = "data"
-    )  %>% as.matrix(), out
-  )
+    )
+    lra.original <- do.call(Sincast::LowRankApprox, lra.control)
+    out <- QQSCale(lra.original, out)
+    out <- (lra.original + out)/2
+  }
   message("Finish impute")
-
-  message("Post-scaling.")
-  # out <- PostScale(
-  #   SeuratObject::GetAssayData(
-  #     object = original,
-  #     layer = "data"
-  #   ), out
-  # )
-  message("Finish post-scaling.")
 
   # Get metadata.
   meta.data <- original@meta.data
@@ -396,7 +431,7 @@ setMethod("SincastImpute", "Sincast", function(object,
 
   message("Constructing diffusion map.")
   if (!is.null(ndcs)) {
-    s <- eigs(p, k = ndcs + 1, method = "LR")
+    s <- RSpectra::eigs(p, k = ndcs + 1, method = "LR")
     s$values <- Re(s$values)
     s$vectors <- Re(s$vectors)
     dc <- sweep(s$vectors, 2, s$values^t, "*")
