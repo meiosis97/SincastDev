@@ -23,7 +23,7 @@ A developing version of Sincast
 15. Suprisingly, the zero-preserving lra imputed data makes perfect projection onto the pseudobulk atlas, and it's sparisty matches the sparisty of the pseudobulk data. This could be an evidence that zero-preserving lra correctly recovered biological zeros.
 16. Next, we tried zero-preserving lra on the Sincast imputed data. The resulting reconstruction also makes perfrect, but less noiser projection compared to which made by the zero-preserving lra on the original data. This suggests that Sincast imputation also makes imputation on biological zeros.
 17. Given what we observed, we propose the following pipeline, (1) Sincast imputation, (2) Zero-preserving lra on the Sincast imputed data to correct for biological zeros (this is similar to the stacking idea in machine learning). (3) Zero-preserving lra on the original data. We assume that the reconstruction correctly preserve the scale of the original data. (4) Scale the Sincast-lra imputed data such that its feature quantiles matche with the lra imputed data. Here, we not only consider quantiles of expressed values, but also zeros since they represent true biology.
-18. Results illustration can be found in [here](./tests/dev2/log/pdf/20231213.pdf), the slide for the presentation to my superviosors can be found in [here](./tests/dev2/log/ppt/20231213.pptx).
+18. Results illustration can be found in [here](./tests/dev2/log/pdf/20231213.pdf), the slide for the presentation to my supervisors can be found in [here](./tests/dev2/log/ppt/20231213.pptx).
 
 ## 2023-12-10
 1. We tried to perform low rank approximation (lra) on the original data, and treat lra as another imputation result, our goal is to combine two imputation results.
