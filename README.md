@@ -9,7 +9,7 @@ A developing version of Sincast
 4. We tried to calculate `L` on the scaled and unscale original data.
 5. We decided to not scale the data before svd since (1) low rank approximation does not have zero mean and standardized variance assumption. (2) After svd, we tried to add back centers and scales of the original data, but the final lra outcome looks weired.
 6. In order to benchmark the imputation and the above reconstruction result, we constructed a pseudobulk atlas of the data, and tried to project the imputed data, as well the reconstructed data onto the atlas.
-7. We tested three different imputation results, (1) `x.imp` (2) `x.lra`, that is lra on the original data (3) `x.imp.lra`, that is the lra on `x.imp`.
+7. We tested three different imputation results, (1) `x.imp` (2) `x.lra`, that is the lra on the original data (3) `x.imp.lra`, that is the lra on `x.imp`.
 8. The projection of none of the three imputation results onto the pseudobulk atlas looks correct. Especially cell clusters of `x.imp.lra` were projected onto the wrong direction of the atlas.
 9. We suspect that it is the quantile or median matching step after either the Sincast or lra imputation that cause the problem. After imputation, we tried to scale (only scale, not mean shift) each imputed feature such that for any cells that has non-zero value on this feature before imputation, the quantile of these cells after imputation should be the same.
 10. Without doing this step of quantile matching, all the projections looks mcuh better: cell clusters can be projected onto the correct direction of the atlas, but do not exactly match to the cell clusters of their atlas conterpart (under-projection).
