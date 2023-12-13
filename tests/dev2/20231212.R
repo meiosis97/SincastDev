@@ -183,3 +183,38 @@ p4 <- ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
   scale_color_gradientn("EGR2",colours = rev(RColorBrewer::brewer.pal(11,"Spectral")))
 ggarrange(p1,p2,p3,p4, align = c('hv'))
 
+
+# Final Sincast
+LowRankApprox <- function(x){
+  svd.x <- RSpectra::svds(x, 100)
+  s <- abs(diff(svd.x$d))
+  mu <- mean(s[79:99])
+  sigma <- sd(s[79:99])
+  sk <- mu + 6*sigma
+  k <- which.min(s > sk)
+  x.lra <- tcrossprod(x %*% svd.x$v[,1:k], svd.x$v[,1:k])
+  x.lra <- apply(x.lra, 2, function(x){
+    x[x<abs(quantile(x[x<0], 0.1))] <- 0
+    x
+  } )
+  colnames(x.lra) <- colnames(x)
+  x.lra
+}
+x.imp.0 <- LowRankApprox(x.imp)
+
+predicted <- predict(pca, t(rankTrans(t(x.imp.0))))
+plot_ly() %>% add_trace(data = data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color =  substr(testobj[["pseudobulk"]]$agg.label, 1,1)) %>%
+  add_trace(data = data.frame(predicted), x = ~PC1, y = ~PC2, z = ~PC3, color = testobj[["imputation"]]$seurat_clusters,
+            marker = list(symbol = "x", size = 5))
+p1 <- ggplot() + geom_point(aes(x.imp.0[,"CCL3"], x.imp.0[,"CCL4"], col = testobj[["imputation"]]$seurat_clusters)) + xlab("CCL3") + ylab("CCL4") +
+  scale_color_manual("cluster", values = RColorBrewer::brewer.pal(8, "Set2"))
+p2 <- ggplot() + geom_point(aes(x.imp.0[,"CCL3"], x[,"CCL3"], col = testobj[["imputation"]]$seurat_clusters)) + xlab("Imputed CCL3") + ylab("Original CCL3") +
+  scale_color_manual("cluster", values = RColorBrewer::brewer.pal(8, "Set2"))+
+  geom_abline(slope = 1, intercept = 0)
+p3 <- ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
+  geom_point(aes(umap_1, umap_2, col = x.imp.0[,1])) +
+  scale_color_gradientn("AL627309.1",colours = rev(RColorBrewer::brewer.pal(11,"Spectral")))
+p4 <- ggplot(data = as.data.frame(testdata@reductions$umap@cell.embeddings)) +
+  geom_point(aes(umap_1, umap_2, col = x.imp.0[,"EGR2"])) +
+  scale_color_gradientn("EGR2",colours = rev(RColorBrewer::brewer.pal(11,"Spectral")))
+ggarrange(p1,p2,p3,p4, align = c('hv'))
