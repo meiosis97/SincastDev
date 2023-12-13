@@ -3,7 +3,7 @@ A developing version of Sincast
 
 ## 2023-12-12
 1. Formally build what we proposed yesterday into the package.
-2. Reeditting R documentation. We deleted also \code{@aliases} roxygen2 label: they are used to assign alternative names to a S4 generic, not used to add an additional label to the generic.
+2. Reeditting R documentation. We deleted also `@aliases` roxygen2 label: they are used to assign alternative names to a S4 generic, not used to add an additional label to the generic.
 3. Some minor modifications on message format and typos.
 
 ## 2023-12-11
