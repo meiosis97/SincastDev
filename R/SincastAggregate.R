@@ -36,7 +36,7 @@ GeneratePseudobulk <- function(data, n.pool, aggregate.method) {
 #'
 #' @return A \code{Sincast} object with updated \code{pseudobulk} assay.
 #'
-#' @seealso \code{\link[Sincast]{SincastAggregate}()}
+#' @seealso \code{\link[Sincast]{SincastImpute}()}
 #'
 #' @export
 #' @name SincastAggregate

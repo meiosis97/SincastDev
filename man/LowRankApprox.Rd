@@ -4,12 +4,23 @@
 \alias{LowRankApprox}
 \title{Low rank approximation.}
 \usage{
-LowRankApprox(x, rank = NULL, do.rsvd = TRUE, seed = 521626, q = 0.9, ...)
+LowRankApprox(
+  x,
+  k = NULL,
+  estimate.rank = TRUE,
+  do.rsvd = TRUE,
+  seed = 521626,
+  q = 0.9,
+  ...
+)
 }
 \arguments{
 \item{x}{a non-negative feature-by-cell matrix.}
 
-\item{rank}{The rank of the approximating matrix of \code{x}. If \code{NULL}, it will be determined by the approach proposed by Linderman et al (2022).}
+\item{k}{Number of singular values requested for single value decomposition. If \code{estimate.rank} is set to TRUE, default is 100, otherwise 50.}
+
+\item{estimate.rank}{Logical; If TRUE, the rank of \code{x} will be estimated by the approach proposed by Linderman et al (2022),
+which will be less or equal to \code{k}. Otherwise the rank will be set to \code{k}. Also note that if TRUE, \code{k} should be a numeric larger than 100.}
 
 \item{do.rsvd}{Logical; If TRUE, perform random single value decomposition.}
 

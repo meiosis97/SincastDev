@@ -68,5 +68,5 @@ A \code{Sincast} object with updated \code{pseudobulk} assay.
 Perform \code{Sincast} aggregation.
 }
 \seealso{
-\code{\link[Sincast]{SincastAggregate}()}
+\code{\link[Sincast]{SincastImpute}()}
 }

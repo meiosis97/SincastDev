@@ -97,7 +97,9 @@ QQSCale <- function(Y, X){
 #' The major contribution of the method is that it can perform imputation while preserve biological zeros.
 #'
 #' @param x a non-negative feature-by-cell matrix.
-#' @param rank The rank of the approximating matrix of \code{x}. If \code{NULL}, it will be determined by the approach proposed by Linderman et al (2022).
+#' @param k Number of singular values requested for single value decomposition. If \code{estimate.rank} is set to TRUE, default is 100, otherwise 50.
+#' @param estimate.rank Logical; If TRUE, the rank of \code{x} will be estimated by the approach proposed by Linderman et al (2022),
+#' which will be less or equal to \code{k}. Otherwise the rank will be set to \code{k}. Also note that if TRUE, \code{k} should be a numeric larger than 100.
 #' @param do.rsvd Logical; If TRUE, perform random single value decomposition.
 #' @param seed The random seed for random SVD if do.rsvd = TRUE.
 #' @param q If a svd-approximation of a feature contains negative values, calculate the qth smallest negative value. Any imputed expression that are lower
@@ -110,26 +112,37 @@ QQSCale <- function(Y, X){
 #' @name LowRankApprox
 #' @rdname LowRankApprox
 LowRankApprox <-  function(x,
-                           rank = NULL,
+                           k = NULL,
+                           estimate.rank = TRUE,
                            do.rsvd = TRUE,
                            seed = 521626,
                            q = 0.9, ...){
   x <- t(x)
 
-  # Number of components to calculate.
-  if(is.null(rank)){
-    rank <- 100
-  }else if(!is.numeric(rank)){
-    warning("rank is not a numeric larger than 100, reset rank to 100")
-    rank <- 100
-  }else if(rank < 100){
-    warning("ran' is not a numeric larger than 100, reset rank to 100")
-    rank <- 100
+  if(estimate.rank){
+    # Number of components to calculate.
+    if(is.null(k)){
+      k <- 100
+    }else if(!is.numeric(k)){
+      warning("k is not a numeric larger than 100, reset k to 100.")
+      k <- 100
+    }else if(k < 100){
+      warning("ran' is not a numeric larger than 100, reset k to 100.")
+      k <- 100
+    }
+
+  }else{
+    # Number of components to calculate.
+    if(is.null(k)){
+      k <- 50
+    }else if(!is.numeric(k)){
+      warning("k is not a numeric, reset k to 50.")
+      k <- 50
+    }
+
   }
 
-  k <- rank
-
-  # Single Value decomposition
+  # Single Value decomposition.
   if(do.rsvd){
     set.seed(seed)
     svd.x <- rsvd::rsvd(x, k, ...)
@@ -137,19 +150,23 @@ LowRankApprox <-  function(x,
     svd.x <- RSpectra::svds(x, k, ...)
   }
 
-  # Determine the number of rank to use if rank is not given
-  s <- abs(diff(svd.x$d))
-  mu <- mean(s[(0.8*k):k-1])
-  sigma <- sd(s[(0.8*k):k-1])
-  sk <- mu + 6*sigma
-  k <- which(s < sk)[1]
-  if(length(k)==0){
-    warning(rank, " ranks could be insufficient to approximate the data.")
-    k <- rank
+  # Determine the number of rank to use if rank is not given.
+  if(estimate.rank){
+    s <- abs(diff(svd.x$d))
+    mu <- mean(s[(0.8*k):k-1])
+    sigma <- sd(s[(0.8*k):k-1])
+    sk <- mu + 6*sigma
+    rank <- which(s < sk)[1]
+    if(length(rank)==0){
+      warning(rank, " single values could be insufficient to approximate the data.")
+      rank <- k
+    }
+  }else{
+    rank <- k
   }
 
   # Low rank approximation
-  x.lra <- tcrossprod(x %*% svd.x$v[,1:k], svd.x$v[,1:k])
+  x.lra <- tcrossprod(x %*% svd.x$v[,1:rank], svd.x$v[,1:rank])
 
   # Restore biological zeros.
   x.lra <- apply(x.lra, 2, function(x){
@@ -278,7 +295,10 @@ setMethod("SincastImpute", "Sincast", function(object,
   if (!is.null(npcs)) {
     pcs <- pcs[, 1:npcs]
   }
-  message("Ready to impute ", length(cells), " cells that are stored in ", assay, " pca.")
+  if( Seurat::Reductions(original, "pca")@assay.used != assay ){
+    stop("SincastImpute: PCA was calculated on another assay other than ", assay)
+  }
+  message("SincastImpute: ready to impute ", length(cells), " cells that are stored in ", assay, " assay, data layer.")
 
   # Subset the original Seurat object.
   original <- original[, cells]
@@ -298,7 +318,7 @@ setMethod("SincastImpute", "Sincast", function(object,
   message("\t Scaling distance.")
   if (do.umap.dist) dist <- ScaleDistance(dist)
 
-  message("\t Calculating band width")
+  message("\t Calculating band width.")
   sigma <- c()
   for (i in 1:length(cells)) {
     dk <- sort(dist[i, ])[2:(k + 1)]
@@ -514,7 +534,8 @@ setMethod("ImputationPlot", "Seurat", function(object,
   # Generate color
   color <- NULL
   if (!is.character(color.by) | length(color.by) != 1) {
-    warning("color.by should be a single character.")
+    warning("ImputationPlot: ", "color.by should be a single character.")
+    color.by <- "ident"
   }
 
   if (color.by == "ident") {
@@ -524,14 +545,15 @@ setMethod("ImputationPlot", "Seurat", function(object,
   } else if (color.by %in% colnames(object@meta.data)) {
     color <- object@meta.data[, color.by]
   } else {
-    warning(color.by, " was not found in neither the data nor the metadata.")
+    warning("ImputationPlot: ", color.by, " was not found in neither the data nor the metadata.")
   }
 
   # Generate annotation
   anno <- NULL
 
   if (!is.null(anno.by) & !all(is.character(anno.by))) {
-    stop("anno.by should be a character vector.")
+    warning("ImputationPlot: ", "anno.by should be a character vector.")
+    anno.by <- NULL
   }
 
   for (i in anno.by) {
@@ -545,7 +567,7 @@ setMethod("ImputationPlot", "Seurat", function(object,
       tmp <- paste(i, object@meta.data[, i], sep = ":")
       anno <- paste(anno, tmp, sep = "\n")
     } else {
-      warning(i, " was not found in either the data nor the metadata.")
+      warning("ImputationPlot: ", i, " was not found in either the data nor the metadata.")
     }
   }
 

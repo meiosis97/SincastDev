@@ -5,7 +5,7 @@ require(ggplot2)
 require(plotly)
 testdata <- readRDS(file = 'C:/Users/yidid/SincastDev/data/testdata.rds')
 testobj <- as.Sincast(testdata)
-testobj <- SincastImpute(testobj, replace = T, do.post.scale = F)
+testobj <- SincastImpute(testobj, replace = T)
 testobj <- SincastAggregate(testobj, replace = T, size.factor = 10,n.pool = 30)
 
 rankTrans <- function(data){
@@ -21,12 +21,8 @@ plot_ly() %>% add_trace(data = data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, 
 
 
 
-
-
-
-
-
-
+testdata@reductions$pca@assay.used
+Seurat::Reductions(testdata, "pca")@assay.used
 
 
 
