@@ -1,6 +1,43 @@
 # SincastDev
 A developing version of Sincast
 
+## 2023-12-12
+
+## 2023-12-11
+1. We tried to project the imputed data on to the pc space of the original data, and then transform (or project?) it back to the original feature space.
+2. Basically we had `x.imput %*% L %*% t(L)`, where `L` is the loading matrix of the PCA performed on the original data.
+3. We tried to calculate `L` on the scaled and unscale original data.
+4. We decided to not y 
+
+## 2023-12-10
+1. We tried to perform low rank approximation (lra) on the original data, and treat lra as another imputation result, our goal is to combine two imputation results.
+2. The idea is the same as that is in the machine learning meta-anlaysis, where we can combine the result of the two predictions made by two different methods. Here, we can try to combine two different imputation results.
+3. The combination method we tried was, aggregation (e.g, take the average of the lra and Sincast imputation result), stacking (e.g, perform Sincast imputation first, and then perform lra on the Sincast imputed data), boosting (it is relatively uneasy to interpret boosting method in the case of imputation, basically, in machine learning, we use the model to predict the outcome, and according to the prediction result, assign weights to samples and perform another iteration of prediction. At the end, the prediction results get from this itretaion are aggregated. We thought about at each diffusion step, perform a lra, and aggreagte all lra).
+4. Boosting would take a lot of time to do experiments. Therefore we tested aggreagtion and stacking first.
+5. It is hard to image that stacking can in any way correct the scale of Sincast imputed data.
+6. Therefore, we tested aggregation.
+7. The post scaling pipline strat by performing two seperate imputation by lra and Sincast. After each imputation, we tried to scale each imputed feature such that for any cells that has non-zero value on this feature before imputation, the quantile of these cells after imputation should be the same.
+8. Compared to what we did on 2023-12-7, we made the following bayes like assumption: for each observed value $x_{ij}$, we have two imputed values $\theta_{ij}^{lra}$ and $\theta_{ij}^{Sincast}$. We assume that these two imputed values are generated from a normal prior distribution with mean $E[\theta_{ij}] = (\theta_{ij}^{lra} + \theta_{ij}^{Sincast})/2$. And the variance is emperically estimated as by the variance of $\theta_{ij}^{lra}$ and $\theta_{ij}^{Sincast}$. The likelihood variance is given by $(x_{ij} - E[\theta_{ij}])^2$.
+9. Though these variance estimation are herustic and **do not follow the rule of probability**, we still can make intutive aggregation of the Sincast and lra imputed data based on these illy defined variances.
+10. If there is great discrepency between  $\theta_{ij}^{lra}$ and $\theta_{ij}^{Sincast}$, then $Var[\theta_{ij}]$ should be large, and any of the imputation result should be untrustfull.
+11. How to determine whether the discrepency is large or not? We benchmark $(\theta_{ij}^{lra} - \theta_{ij}^{Sincast})^2$ by $(x_{ij} - E[\theta_{ij}])^2$.
+12. If $(\theta_{ij}^{lra} - \theta_{ij}^{Sincast})^2$ is much larger than $(x_{ij} - \hat{\theta_{ij}})^2$, we let the final imputed value $\hat{x}\_{ij}$ be closer to $\hat{\theta}\_{ij}$, otherwise it should be closer to the original data, $x_{ij}$.
+13. We found that shrink back the imputed data back to the original data may not be a good practice, since the original data can be very noisy and is not the ground truth representation of the biological state of a cell.
+14. An interesting feature on which we found both the imputation method give weird result was the first gene (index 1, see details in the R script). This gene lowly, sparsely and iregularly expressed on the umap of the data, and from human intepretation, this gene could be completely a noisy gene. However, both lra and Sincast imputation reconstruct a specific expression of this gene. Moerver, after imputation by both the method, this gene is highly expression in may cells. This makes us wondering whether our imputation method, as well as lra are introducing too much of signal to the data, which should be noise. 
+
+## 2023-12-8
+1. We tried to do low rank approximation by PLS, where Y is set to the original data and X is set to the imputed data.
+2. It is almost imposible to perform PLS in this case due to computation reason because PLS require svd on `svd(t(Y)%*%X)`, which is quite heavy.
+3. Therefore, we first try to perform pca seperately on each of the original and the imputed data, with the same number of pcs.
+4. Then we perform PLS on the pc space of the two data matrices.
+5. We first tried to reconstruct the pc scores of the imputed matrix using its PLS loadings, and then reconstruct the full imputed matrix by its PC scores. The code was ` pcs.imp %*% pls.imp.L %*% t(pls.imp.L) %*% t(pcs.imp.L)`.
+6. The intepertation of this reconstruction is mnot intuitive.
+7. Seems like the imputed matrix after reconstruction still is not in the correct scale (does not match with the scale of the original data). Especially, signal of lowly expressed gene is completely buried.
+8. As Jiadong suggested, tried to center and scale matrices before low rank approximation. We tried to center and scale a matrix, perform low rank approximation on the centered and scaled matrix, and then add centers and scales back to the low rank reconstruction.
+9. We worried that two approximation steps would make the data too noisy.
+10. We did the above procedure on the original data, and found that we the reconstructed matrix is not in the correct scale, and got a lots of negative values.
+11. We are also not sure about in what way should we reconstruct the matrix, that is, should we reconstruct X, or Y, or $\hat{Y}$ that is predicted by PLS?
+
 ## 2023-12-7
 1. Try to update Sincast post imputation scaling: PostScale
 2. Previously, we calculated differences between actual values and imputed values, based on which we computed squared errors. We also calculated on each imputed value its post-imputation variance. We than perform post-imputation scaling by weighted averaging the actual value and imputed value, where weights are based on squared errors and post-imputation variance.
