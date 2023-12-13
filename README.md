@@ -4,10 +4,22 @@ A developing version of Sincast
 ## 2023-12-12
 
 ## 2023-12-11
-1. We tried to project the imputed data on to the pc space of the original data, and then transform (or project?) it back to the original feature space.
-2. Basically we had `x.imput %*% L %*% t(L)`, where `L` is the loading matrix of the PCA performed on the original data.
-3. We tried to calculate `L` on the scaled and unscale original data.
-4. We decided to not y 
+1. We tried to project the Sincast imputed data (`x.imp`) on to the pc space of the original data, and then transform (or project?) it back to the original feature space.
+2. Basically we had `x.imp %*% L %*% t(L)`, where `L` is the loading matrix of the PCA performed on the original data. We consider `L %*% t(L) = L %*% inv(t(L)%*%L) %*% t(L)` a projection matrix that projects `x.imp` on to the colunm space of `L`. We hope this step of projection can help adjust for over-smoothing.
+4. We tried to calculate `L` on the scaled and unscale original data.
+5. We decided to not scale the data before svd since (1) low rank approximation does not have zero mean and standardized variance assumption. (2) After svd, we tried to add back centers and scales of the original data, but the final lra outcome looks weired.
+6. In order to benchmark the imputation and the above reconstruction result, we constructed a pseudobulk atlas of the data, and tried to project the imputed data, as well the reconstructed data onto the atlas.
+7. We tested three different imputation results, (1) `x.imp` (2) `x.lra`, that is lra on the original data (3) `x.imp.lra`, that is the lra on `x.imp`.
+8. The projection of none of the three imputation results onto the pseudobulk atlas looks correct. Especially cell clusters of `x.imp.lra` were projected onto the wrong direction of the atlas.
+9. We suspect that it is the quantile or median matching step after either the Sincast or lra imputation that cause the problem. After imputation, we tried to scale (only scale, not mean shift) each imputed feature such that for any cells that has non-zero value on this feature before imputation, the quantile of these cells after imputation should be the same.
+10. Without doing this step of quantile matching, all the projections looks mcuh better: cell clusters can be projected onto the correct direction of the atlas, but do not exactly match to the cell clusters of their atlas conterpart (under-projection).
+11. Why the quantile matching causes the problem? Using the first feature of the original data as an example, it is almost not expressed by all of the cells, expect a fews that are randomly distributed on the umap. After both the Sincast and lra imputation (without quantile matching), we see that the imputed expression value are very small, close to zero. If we do our proposed quantile matching, we will up-scale the imputed expression to those noise in the original data, making every cell highly express this noisy gene. 
+12. We also question the necessaity of quantile matching after lra imputation. Since high rank lra will eventually reconstruct the signal of the original data. If we want to match the imputed data with the original data, then what is the point of denoising? We consider the lra imputation is already in the correct scale.
+13. From now on, we skip the quantile matching step.
+14. We tried the zero-preserving lra method proposed by [Linderman et al. (2022)](https://www.nature.com/articles/s41467-021-27729-z). The method is developed to preserve biological zeros in the data after imputation.
+15. Suprisingly, the zero-preserving lra imputed data makes perfect projection onto the pseudobulk atlas, and it's sparisty matches the sparisty of the pseudobulk data. This could be an evidence that zero-preserving lra correctly recovered biological zeros.
+16. Next, we tried zero-preserving lra on the Sincast imputed data. The resulting reconstruction also makes perfrect, but less noiser projection compared to which made by the zero-preserving lra on the original data. This suggests that Sincast imputation also makes imputation on biological zeros.
+17. Given what we observed, we propose the following pipeline, (1) Sincast imputation, (2) Zero-preserving lra on the Sincast imputed data to correct for biological zeros (this is similar to the stacking idea in machine learning). (3) Zero-preserving lra on the original data. We assume that the reconstruction correctly preserve the scale of the original data. (4) Scale the Sincast-lra imputed data such that its feature quantiles matche with the lra imputed data. Here, we not only consider quantiles of expressed values, but also zeros since they represent true biology.
 
 ## 2023-12-10
 1. We tried to perform low rank approximation (lra) on the original data, and treat lra as another imputation result, our goal is to combine two imputation results.
@@ -23,7 +35,7 @@ A developing version of Sincast
 11. How to determine whether the discrepency is large or not? We benchmark $(\theta_{ij}^{lra} - \theta_{ij}^{Sincast})^2$ by $(x_{ij} - E[\theta_{ij}])^2$.
 12. If $(\theta_{ij}^{lra} - \theta_{ij}^{Sincast})^2$ is much larger than $(x_{ij} - \hat{\theta_{ij}})^2$, we let the final imputed value $\hat{x}\_{ij}$ be closer to $\hat{\theta}\_{ij}$, otherwise it should be closer to the original data, $x_{ij}$.
 13. We found that shrink back the imputed data back to the original data may not be a good practice, since the original data can be very noisy and is not the ground truth representation of the biological state of a cell.
-14. An interesting feature on which we found both the imputation method give weird result was the first gene (index 1, see details in the R script). This gene lowly, sparsely and iregularly expressed on the umap of the data, and from human intepretation, this gene could be completely a noisy gene. However, both lra and Sincast imputation reconstruct a specific expression of this gene. Moerver, after imputation by both the method, this gene is highly expression in may cells. This makes us wondering whether our imputation method, as well as lra are introducing too much of signal to the data, which should be noise. 
+14. An interesting feature on which we found both the imputation method give weird result was the first gene (index 1, see details in the R script). This gene lowly, sparsely and irregularly expressed on the umap of the data, and from an objective intepretation, this gene could be completely a noisy gene. However, both lra and Sincast imputation reconstruct a specific expression pattern on this gene. Moerver, after imputation by both the methods, this gene is highly expression in may cells. This makes us wondering whether our imputation method, as well as lra are introducing too much of signal to the data, which should be noise. 
 
 ## 2023-12-8
 1. We tried to do low rank approximation by PLS, where Y is set to the original data and X is set to the imputed data.
