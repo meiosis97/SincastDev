@@ -3,6 +3,7 @@
 export("%>%")
 export("GetSincastAssays<-")
 export("GetSincastAtlas<-")
+export(BuildSincastAtlas)
 export(CheckSincastAssays)
 export(CheckSincastAtlas)
 export(CheckSincastObject)

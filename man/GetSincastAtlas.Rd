@@ -49,10 +49,12 @@ To be added.
 }
 \seealso{
 Other SincastAtlas related methods: 
+\code{\link{BuildSincastAtlas}()},
 \code{\link{CheckSincastAtlas}()},
 \code{\link{CleanSincastAtlas}()}
 
 Other SincastAtlas related methods: 
+\code{\link{BuildSincastAtlas}()},
 \code{\link{CheckSincastAtlas}()},
 \code{\link{CleanSincastAtlas}()}
 }

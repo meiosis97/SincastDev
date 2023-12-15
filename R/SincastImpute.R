@@ -444,7 +444,7 @@ setMethod("SincastImpute", "Sincast", function(object,
 
   # Return the diffusion operator and diffusion map.
   if (ret.graph) {
-    graph.names <- paste(assay, "Sincast", sep = "_")
+    graph.names <- paste("Sincast", assay, "DO", sep = "_")
     out[[graph.names]] <- as.Graph(p)
   }
 
@@ -457,7 +457,7 @@ setMethod("SincastImpute", "Sincast", function(object,
     dc <- dc[, -1]
     rownames(dc) <- cells
     colnames(dc) <- paste("DC", 1:ndcs, sep = "_")
-    out[["dm_Sincast"]] <- Seurat::CreateDimReducObject(
+    out[["Sincast_dm"]] <- Seurat::CreateDimReducObject(
       embeddings = dc,
       assay = assay
     )
@@ -525,7 +525,7 @@ setMethod("ImputationPlot", "Seurat", function(object,
 
   if (!is.null(cells)) object <- object[cells, ]
 
-  dcs <- Seurat::Embeddings(object, reduction = "dm_Sincast")
+  dcs <- Seurat::Embeddings(object, reduction = "Sincast_dm")
   dcs <- dcs[, dims]
   axis.labels <- colnames(dcs)
   colnames(dcs) <- c("x", "y", "z")

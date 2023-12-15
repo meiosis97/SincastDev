@@ -19,6 +19,16 @@ testobj[["pseudobulk"]] <- NULL
 testobj
 ImputationPlot(testobj, color.by = "EGR2", anno.by = c("ident", "CD34"), dims = 1:3)
 
+SeuratObject::LayerData(testdata)
+??LayerData
+
+
+testobj[["original"]]@misc$SincastToken
+
+help("timestamp")
+summary(testobj)
+timestamp(quiet = F)
+difftime(timestamp(quiet = F), timestamp(quiet = F))
 ################################################################################
 library(RANN)
 library(glmnet)

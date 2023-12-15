@@ -28,6 +28,7 @@ To be added.
 }
 \seealso{
 Other SincastAtlas related methods: 
+\code{\link{BuildSincastAtlas}()},
 \code{\link{CleanSincastAtlas}()},
 \code{\link{GetSincastAtlas}()}
 }

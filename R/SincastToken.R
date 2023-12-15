@@ -1,6 +1,6 @@
 GenerateSincastToken <- function(by = "GenerateSincastToken", command = deparse(match.call()), extend = NULL){
     id <- paste(sample(c(rep(0:9, 3), letters, LETTERS), 16, TRUE), collapse = "")
-    timestamp <- timestamp(prefix = NULL, suffix = NULL, quiet = T)
+    timestamp <- Sys.time()
     if(is.null(extend)){
       command <- list(command)
       names(command) <- id

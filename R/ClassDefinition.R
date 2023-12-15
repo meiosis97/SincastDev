@@ -19,7 +19,7 @@ SincastToken <- setClass(
   Class = "SincastToken",
   slots = list(
     id = "character",
-    timestamp = "character",
+    timestamp = "POSIXct",
     by = "character",
     command = "list",
     summary = "data.frame"
