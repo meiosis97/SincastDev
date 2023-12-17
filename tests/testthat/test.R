@@ -2,6 +2,7 @@ library("Sincast")
 require(Matrix)
 require(dplyr)
 require(ggplot2)
+require(Seurat)
 testdata <- readRDS(file = 'C:/Users/yidid/SincastDev/data/testdata.rds')
 testobj <- as.Sincast(testdata)
 CheckSincastObject(testobj)
@@ -16,14 +17,39 @@ testobj <- SincastImpute(testobj, replace = T)
 testobj@SincastAssays@pseudobulk@misc
 testobj[["imputation"]]
 testobj[["pseudobulk"]] <- NULL
+testobj["pseudobulk"]
 testobj
 ImputationPlot(testobj, color.by = "EGR2", anno.by = c("ident", "CD34"), dims = 1:3)
+testobj <- BuildSincastAtlas(testobj, replace = T)
+summary(testobj)
+testobj@SincastAtlas@pseudobulk@misc
+capture.output(testobj@SincastAtlas)
+testobj@summary@active.assay
 
-SeuratObject::LayerData(testdata)
-??LayerData
+AtlasPlot(testobj)
 
 
-testobj[["original"]]@misc$SincastToken
+dim(testobj@SincastAtlas@original@assays$RNA$counts)
+tes <- function(){
+  message("\r  Now construct affinity matrix. ", appendLF = F)
+  message(paste("\r  construct affinity matrix: Calcualting distance."), appendLF = F)
+  message(paste("\r  Construct affinity matrix: Scaling distance."), appendLF = F)
+}
+tes()
+
+testdata <- DietSeurat(testdata, layers = c('counts'),)
+LayerData(testdata, layer = "data") <- NULL
+
+testdata@assays$R
+
+do.call(ScaleData, args)
+ScaleData()
+help(ScaleData)
+rlang:::exec(ScaleData, !!!args)
+
+rlang::exec(ScaleData, !!!args)
+
+SeuratObject::LayerData(testobj[["imputation"]], layer = "data") <- SeuratObject::LayerData(testobj[["imputation"]], layer = "counts")
 
 help("timestamp")
 summary(testobj)

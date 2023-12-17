@@ -123,11 +123,11 @@ LowRankApprox <-  function(x,
     # Number of components to calculate.
     if(is.null(k)){
       k <- 100
-    }else if(!is.numeric(k)){
-      warning("k is not a numeric larger than 100, reset k to 100.")
+    }else if(!IsNumericVector(k, n = 1)){
+      warning("k is not a single numeric larger than 100, reset k to 100.")
       k <- 100
     }else if(k < 100){
-      warning("ran' is not a numeric larger than 100, reset k to 100.")
+      warning("ran' is not a single numeric larger than 100, reset k to 100.")
       k <- 100
     }
 
@@ -135,8 +135,8 @@ LowRankApprox <-  function(x,
     # Number of components to calculate.
     if(is.null(k)){
       k <- 50
-    }else if(!is.numeric(k)){
-      warning("k is not a numeric, reset k to 50.")
+    }else if(!IsNumericVector(k, n = 1)){
+      warning("k is not a single numeric, reset k to 50.")
       k <- 50
     }
 
@@ -188,7 +188,7 @@ LowRankApprox <-  function(x,
 #' Perform Sincast imputation.
 #'
 #' @param object A \code{Sincast} object.
-#' @param assay Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.
+#' @param assay Name of the \code{Seurat} assay imputation is being run on. Default is the default \code{Seurat} assay.
 #' @param features Features to impute. Default is all features in the assay.
 #' @param npcs How many principal components to compute on the query data. The PCs will be used to construct the knn graph.
 #' @param t Diffusion time, or the power of Markov transition matrix.
@@ -206,7 +206,7 @@ LowRankApprox <-  function(x,
 #' data.
 #' @param preserve.zero Logical; if TRUE, perform zero-preserving low rank approximation on the \code{Sincast} imputed data.
 #' (See \code{\link[Sincast]{LowRankApprox}}).
-#' @param lra.control A list of controls for \code{\link[Sincast]{LowRankApprox}}.
+#' @param lra.control A list of arguments to \code{\link[Sincast]{LowRankApprox}} function call .
 #' @param ret.graph Logical; if TRUE, return the diffusion operator and store it in the \code{graph} slot of the imputation assay.
 #' @param ndcs Calculate \code{ndcs} number of diffusion components by eigen decomposing the diffusion operator.
 #'        Resulting cell embedding is stored in the \code{reduction} slot of the imputation assay.
@@ -289,24 +289,49 @@ setMethod("SincastImpute", "Sincast", function(object,
   # Check norm format.
   norm <- match.arg(norm)
 
-  # Get pcs.
+  # Get pcs and cells.
   pcs <- Seurat::Embeddings(original, reduction = "pca")
-  cells <- rownames(pcs)
+  cells <- colnames(SeuratObject::LayerData(original,
+                                            layer = "data"))
+
+  if( !all(cells == rownames(pcs))){
+    stop("SincastImpute: Miss-matching data colunm names and pc rownames.")
+  }
   if (!is.null(npcs)) {
     pcs <- pcs[, 1:npcs]
   }
   if( Seurat::Reductions(original, "pca")@assay.used != assay ){
     stop("SincastImpute: PCA was calculated on another assay other than ", assay)
   }
-  message("SincastImpute: ready to impute ", length(cells), " cells that are stored in ", assay, " assay, data layer.")
 
-  # Subset the original Seurat object.
+  # Get features.
+  data.features <- rownames(SeuratObject::LayerData(original,
+                                                    layer = "data"))
+  # Get default features to impute.
+  if (!is.null(features)){
+    if(IsCharacterVector(features)){
+      missing.features <- features[!features %in% data.features]
+      if(length(missing.features)){
+        warning("SincastImpute: ", paste(missing.features, collapse = ","), " are ignored.")
+        features <- intersect(features, data.features)
+      }
+    }
+  }else{
+    features <- data.features
+  }
+
+  # Subset the data.
   original <- original[, cells]
-  if (!is.null(features)) original <- original[features, ]
+  original <- original[features, ]
+
+  # Ready to impute.
+  message("SincastImpute: Ready to impute ", length(features), " features, ", length(cells),
+          " cells that are stored in ", assay, " assay, data layer.")
+  message(rep("-", 100))
 
   # Construct affinity matrix.
-  message("Now construct affinity matrix.")
-  message("\t Calcualting distance.")
+  message("  Now construct affinity matrix:")
+  message("    Calcualting distance.")
   dist <- pdist(pcs)
 
   # Adjust bandwidth.
@@ -315,10 +340,10 @@ setMethod("SincastImpute", "Sincast", function(object,
   }
   if (is.null(knn)) knn <- k
 
-  message("\t Scaling distance.")
+  message("    Scaling distance.")
   if (do.umap.dist) dist <- ScaleDistance(dist)
 
-  message("\t Calculating band width.")
+  message("    Calculating band width.")
   sigma <- c()
   for (i in 1:length(cells)) {
     dk <- sort(dist[i, ])[2:(k + 1)]
@@ -332,31 +357,27 @@ setMethod("SincastImpute", "Sincast", function(object,
   }
   names(sigma) <- cells
 
-  message("\t Calculating affinities.")
+  message("    Calculating affinities.")
   aff <- exp(-0.5 * (dist / sigma)^2)
   for (i in 1:length(cells)) aff[i, ][rank(-aff[i, ]) > knn] <- 0
   aff <- Matrix::Matrix(aff)
 
-  message("\t Symmetrization.")
+  message("    Symmetrization.")
   aff <- Symmetrization(aff, norm = norm)
 
   # Laplacian normalization
   if (do.laplacian) {
-    message("\t Laplacian normalization.")
+    message("    Laplacian normalization.")
     aff <- Laplacian(aff)
   }
-  message("Construct affinity matrix: Done.")
+  message("    **Done**")
 
-  message("Now impute.")
-  message("\t Constructing diffusion operator.")
+  message("  Now impute:")
+  message("    Constructing diffusion operator.")
   p <- aff / rowSums(aff)
 
-  message("\t Diffusing.")
-  out <- SeuratObject::GetAssayData(
-    object = original,
-    layer = "data"
-  )
-
+  message("    Diffusing.")
+  out <- SeuratObject::LayerData(original, layer = "data")
   for (i in 1:t) {
     out <- tcrossprod(out, t(p))
 
@@ -364,7 +385,7 @@ setMethod("SincastImpute", "Sincast", function(object,
   out <- as.matrix(out)
 
   if(preserve.zero){
-    message("\t Zero-preserving low rank approximation.")
+    message("    Zero-preserving low rank approximation.")
     if(!is.list(lra.control)){
       warning("lra.control is not a list. Using the default control.")
       lra.control <- list()
@@ -374,12 +395,12 @@ setMethod("SincastImpute", "Sincast", function(object,
   }
 
   if(do.post.scale){
-    message("\t Post-scaling.")
+    message("    Post-scaling.")
     if(!is.list(lra.control)){
-      warning("lra.control is not a list. Using the default control.")
+      warning("SincastImpute: lra.control is not a list. Using the default control.")
       lra.control <- list()
     }
-    lra.control[["x"]] <- SeuratObject::GetAssayData(
+    lra.control[["x"]] <- SeuratObject::LayerData(
       object = original,
       layer = "data"
     )
@@ -387,14 +408,16 @@ setMethod("SincastImpute", "Sincast", function(object,
     out <- QQSCale(lra.original, out)
     out <- (lra.original + out)/2
   }
-  message("Finish impute")
+  message("    **Done**")
+  message(rep("-", 100))
+  message("SincastImpute: Finish impute.")
 
   # Get metadata.
   meta.data <- original@meta.data
 
   # Calculate sparsity
   sparsity.before <- mean(
-    SeuratObject::GetAssayData(
+    SeuratObject::LayerData(
       object = original,
       layer = "data"
     ) == 0
@@ -402,16 +425,13 @@ setMethod("SincastImpute", "Sincast", function(object,
   sparsity.after <- mean(out == 0)
 
   # Generate a token for the original data.
-  if (is.null(
-    Seurat::Misc(original, slot = "SincastToken")
-  )) {
+  SincastToken <- Seurat::Misc(original, slot = "SincastToken")
+  if (is.null(SincastToken) | !is(SincastToken, "SincastToken")) {
     SincastToken <- GenerateSincastToken()
     Seurat::Misc(
       Sincast::GetSincastAssays(object, assay = "original"),
       slot = "SincastToken"
     ) <- SincastToken
-  } else {
-    SincastToken <- Seurat::Misc(original, slot = "SincastToken")
   }
 
   # Generate a token for this imputation run.
@@ -435,8 +455,9 @@ setMethod("SincastImpute", "Sincast", function(object,
   # Write the summary information
   object@summary@summary["imputation", ] <- c(
     assay, "data", nrow(out), ncol(out),
-    NA, round(sparsity.before, 3), round(sparsity.after, 3)
+    NA, NA, round(sparsity.before, 3), round(sparsity.after, 3)
   )
+  object@summary@active.assay <- "imputation"
   SincastToken@summary <- object@summary@summary["imputation", ]
 
   # Add token to the new Seurat object,
@@ -444,7 +465,7 @@ setMethod("SincastImpute", "Sincast", function(object,
 
   # Return the diffusion operator and diffusion map.
   if (ret.graph) {
-    graph.names <- paste("Sincast", assay, "DO", sep = "_")
+    graph.names <- paste("sincast", assay, "DO", sep = "_")
     out[[graph.names]] <- as.Graph(p)
   }
 
@@ -457,7 +478,7 @@ setMethod("SincastImpute", "Sincast", function(object,
     dc <- dc[, -1]
     rownames(dc) <- cells
     colnames(dc) <- paste("DC", 1:ndcs, sep = "_")
-    out[["Sincast_dm"]] <- Seurat::CreateDimReducObject(
+    out[["sincast_dm"]] <- Seurat::CreateDimReducObject(
       embeddings = dc,
       assay = assay
     )
@@ -487,12 +508,12 @@ setMethod("SincastImpute", "Sincast", function(object,
 #'  generated by \code{\link[Sincast]{SincastImpute}}.
 #' @param dims Dimensions to plot, must be a three-length numeric vector specifying x-, y- and z-dimensions.
 #' @param cells Cells to plot.
-#' @param color.by Color query cells by which feature or meta.data attribute.
+#' @param color.by Color cells by which feature or meta.data attribute.
 #' @param colors Color Scheme of col.by. Should be a named vector using color
 #'  codes as values and labels of \code{color.by} as names.
-#' @param anno.by Additional annotation of query cells.
+#' @param anno.by Additional annotation of cells.
 #'
-#' @return A \code{plotly} object.
+#' @return A \code{plotly} object illustrating diffusion components.
 #'
 #' @seealso \code{\link[Sincast]{SincastAggregate}()}
 #'
@@ -525,7 +546,7 @@ setMethod("ImputationPlot", "Seurat", function(object,
 
   if (!is.null(cells)) object <- object[cells, ]
 
-  dcs <- Seurat::Embeddings(object, reduction = "Sincast_dm")
+  dcs <- Seurat::Embeddings(object, reduction = "sincast_dm")
   dcs <- dcs[, dims]
   axis.labels <- colnames(dcs)
   colnames(dcs) <- c("x", "y", "z")
@@ -533,15 +554,15 @@ setMethod("ImputationPlot", "Seurat", function(object,
 
   # Generate color
   color <- NULL
-  if (!is.character(color.by) | length(color.by) != 1) {
+  if(! IsCharacterVector(color.by, n= 1) ){
     warning("ImputationPlot: ", "color.by should be a single character.")
     color.by <- "ident"
   }
 
   if (color.by == "ident") {
-    color <- Seurat::Idents(object)[]
+    color <- Seurat::Idents(object)
   } else if (color.by %in% rownames(object)) {
-    color <- suppressWarnings( Seurat::GetAssayData(object)[color.by, ] )
+    color <- suppressWarnings( SeuratObject::LayerData(object)[color.by, ] )
   } else if (color.by %in% colnames(object@meta.data)) {
     color <- object@meta.data[, color.by]
   } else {
@@ -551,17 +572,17 @@ setMethod("ImputationPlot", "Seurat", function(object,
   # Generate annotation
   anno <- NULL
 
-  if (!is.null(anno.by) & !all(is.character(anno.by))) {
+  if (!is.null(anno.by) & !IsCharacterVector(anno.by) ) {
     warning("ImputationPlot: ", "anno.by should be a character vector.")
     anno.by <- NULL
   }
 
   for (i in anno.by) {
     if (i == "ident") {
-      tmp <- paste(i, Seurat::Idents(object)[], sep = ":")
+      tmp <- paste(i, Seurat::Idents(object), sep = ":")
       anno <- paste(anno, tmp, sep = "\n")
     } else if (i %in% rownames(object)) {
-      tmp <- suppressWarnings( paste(i, Seurat::GetAssayData(object)[i, ], sep = ":") )
+      tmp <- suppressWarnings( paste(i, SeuratObject::LayerData(object)[i, ], sep = ":") )
       anno <- paste(anno, tmp, sep = "\n")
     } else if (i %in% colnames(object@meta.data)) {
       tmp <- paste(i, object@meta.data[, i], sep = ":")

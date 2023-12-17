@@ -23,8 +23,8 @@ GeneratePseudobulk <- function(data, n.pool, aggregate.method) {
 #' Perform \code{Sincast} aggregation.
 #'
 #' @param object A \code{Sincast} object.
-#' @param assay Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.
-#' @param layer Which \code{Seurat} layer to use. Default is the \code{counts} layer.
+#' @param assay Name of the \code{Seurat} assay aggregation is being run on. Default is the default \code{Seurat} assay.
+#' @param layer Name of the \code{Seurat} layer aggregation is being run on. Default is the \code{counts} layer.
 #' @param features Features to analyze. Default is all features in the assay.
 #' @param group.by To be added.
 #' @param sample.method To be added.
@@ -44,7 +44,6 @@ GeneratePseudobulk <- function(data, n.pool, aggregate.method) {
 setGeneric("SincastAggregate", function(object,
                                         assay = NULL,
                                         layer = "counts",
-                                        cells = NULL,
                                         features = NULL,
                                         group.by = "ident",
                                         sample.method = c("equal.size", "equal.prop"),
@@ -61,7 +60,6 @@ setGeneric("SincastAggregate", function(object,
 setMethod("SincastAggregate", "Sincast", function(object,
                                                   assay = NULL,
                                                   layer = "counts",
-                                                  cells = NULL,
                                                   features = NULL,
                                                   group.by = "ident",
                                                   sample.method = c("equal.size", "equal.prop"),
@@ -92,12 +90,38 @@ setMethod("SincastAggregate", "Sincast", function(object,
   # Get the default assay.
   if (is.null(assay)) {
     assay <- Seurat::DefaultAssay(original)
-  }else{
+  } else {
     Seurat::DefaultAssay(original) <- assay
   }
 
-  # Get default features to aggregate.
-  if (!is.null(features)) original <- original[features, ]
+  # Get cells.
+  cells <- colnames(SeuratObject::LayerData(original,
+                                            layer = layer))
+
+  # Get features.
+  data.features <- rownames(SeuratObject::LayerData(original,
+                                                    layer = layer))
+  # Get default features to impute.
+  if (!is.null(features)){
+    if(IsCharacterVector(features)){
+      missing.features <- features[!features %in% data.features]
+      if(length(missing.features)){
+        warning("SincastImpute: ", paste(missing.features, collapse = ","), " are ignored.")
+        features <- intersect(features, data.features)
+      }
+    }
+  }else{
+    features <- data.features
+  }
+
+  # Subset the data.
+  original <- original[, cells]
+  original <- original[features, ]
+
+  # Ready to impute.
+  message("SincastImpute: Ready to aggregate ", length(features), " features, ", length(cells),
+          " cells that are stored in ", assay, " assay, ", layer, " layer. Aggregation will be done within ", group.by, " groups.")
+  message(rep("-", 100))
 
   # Get the default group.
   if (group.by == "ident") {
@@ -119,7 +143,7 @@ setMethod("SincastAggregate", "Sincast", function(object,
 
   # Aggregation.
   for (g in group.name) {
-    message(paste("\rSincastAggregate: Now aggregate ", g), appendLF = F)
+    message("  SincastAggregate: Now aggregate ", g)
 
     # Calculate how many cells are in cluster g.
     n.c <- sum(group == g)
@@ -137,7 +161,7 @@ setMethod("SincastAggregate", "Sincast", function(object,
     }
 
     # Subset data.
-    tmp.data <- SeuratObject::GetAssayData(
+    tmp.data <- SeuratObject::LayerData(
       object = original,
       layer = layer
     )[, group == g, drop = F] %>% as.matrix()
@@ -150,7 +174,7 @@ setMethod("SincastAggregate", "Sincast", function(object,
     colnames(out[[g]]) <- paste(g, sep, 1:n.gen, sep = "")
     agg.label <- c(agg.label, rep(g, n.gen))
   }
-  message("\n", rep("-", 50))
+  message(rep("-", 100))
 
   # Collapse the list.
   out <- unname(out)
@@ -160,7 +184,7 @@ setMethod("SincastAggregate", "Sincast", function(object,
 
   # Calculate sparsity
   sparsity.before <- mean(
-    SeuratObject::GetAssayData(
+    SeuratObject::LayerData(
       object = original,
       layer = layer
     ) == 0
@@ -168,23 +192,21 @@ setMethod("SincastAggregate", "Sincast", function(object,
   sparsity.after <- mean(out == 0)
 
   # Generate a token for the original data.
-  if (is.null(
-    Seurat::Misc(original, slot = "SincastToken")
-  )) {
+  SincastToken <- Seurat::Misc(original, slot = "SincastToken")
+  if (is.null(SincastToken) | !is(SincastToken, "SincastToken")) {
     SincastToken <- GenerateSincastToken()
     Seurat::Misc(
       Sincast::GetSincastAssays(object, assay = "original"),
       slot = "SincastToken"
     ) <- SincastToken
-  }else{
-    SincastToken <- Seurat::Misc(original, slot = "SincastToken")
   }
 
   # Generate a token for this aggregation run.
-
-  SincastToken <- GenerateSincastToken(by = "SincastAggregate",
-                                       command = deparse(match.call()),
-                                       extend = SincastToken@command)
+  SincastToken <- GenerateSincastToken(
+    by = "SincastAggregate",
+    command = deparse(match.call()),
+    extend = SincastToken@command
+  )
 
   # Create a new Seurat object to store the result.
   suppressWarnings(
@@ -198,9 +220,12 @@ setMethod("SincastAggregate", "Sincast", function(object,
   Seurat::Idents(out) <- "agg.label" # Add aggregated annotation.
 
   # Write the summary information
-  object@summary@summary["pseudobulk",] <-  c(assay, layer, nrow(out), ncol(out),
-                                              NA, round(sparsity.before,3), round(sparsity.after,3))
-  SincastToken@summary <- object@summary@summary["pseudobulk",]
+  object@summary@summary["pseudobulk", ] <- c(
+    assay, layer, nrow(out), ncol(out),
+    NA, NA, round(sparsity.before, 3), round(sparsity.after, 3)
+  )
+  object@summary@active.assay <- "pseudobulk"
+  SincastToken@summary <- object@summary@summary["pseudobulk", ]
 
   # Add token to the new Seurat object,
   Seurat::Misc(out, slot = "SincastToken") <- SincastToken

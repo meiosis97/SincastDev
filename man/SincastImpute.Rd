@@ -49,7 +49,7 @@ SincastImpute(
 \arguments{
 \item{object}{A \code{Sincast} object.}
 
-\item{assay}{Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.}
+\item{assay}{Name of the \code{Seurat} assay imputation is being run on. Default is the default \code{Seurat} assay.}
 
 \item{features}{Features to impute. Default is all features in the assay.}
 
@@ -79,7 +79,7 @@ data.}
 \item{preserve.zero}{Logical; if TRUE, perform zero-preserving low rank approximation on the \code{Sincast} imputed data.
 (See \code{\link[Sincast]{LowRankApprox}}).}
 
-\item{lra.control}{A list of controls for \code{\link[Sincast]{LowRankApprox}}.}
+\item{lra.control}{A list of arguments to \code{\link[Sincast]{LowRankApprox}} function call .}
 
 \item{ret.graph}{Logical; if TRUE, return the diffusion operator and store it in the \code{graph} slot of the imputation assay.}
 

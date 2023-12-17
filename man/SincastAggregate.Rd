@@ -8,7 +8,6 @@ SincastAggregate(
   object,
   assay = NULL,
   layer = "counts",
-  cells = NULL,
   features = NULL,
   group.by = "ident",
   sample.method = c("equal.size", "equal.prop"),
@@ -25,7 +24,6 @@ SincastAggregate(
   object,
   assay = NULL,
   layer = "counts",
-  cells = NULL,
   features = NULL,
   group.by = "ident",
   sample.method = c("equal.size", "equal.prop"),
@@ -41,9 +39,9 @@ SincastAggregate(
 \arguments{
 \item{object}{A \code{Sincast} object.}
 
-\item{assay}{Which \code{Seurat} assay to use. Default is the default \code{Seurat} assay.}
+\item{assay}{Name of the \code{Seurat} assay aggregation is being run on. Default is the default \code{Seurat} assay.}
 
-\item{layer}{Which \code{Seurat} layer to use. Default is the \code{counts} layer.}
+\item{layer}{Name of the \code{Seurat} layer aggregation is being run on. Default is the \code{counts} layer.}
 
 \item{features}{Features to analyze. Default is all features in the assay.}
 

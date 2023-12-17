@@ -8,13 +8,16 @@ setMethod("initialize", "SincastSummary", function(.Object, ..., summary) {
   )
   cname <- c(
     "assay", "layer", "nfeatures", "nsamples",
-    "ncomponents", "sparsity before", "sparsity after"
+    "n.components", "var.explained", "sparsity.before", "sparsity.after"
   )
 
   .Object@summary <- data.frame(matrix(
     nrow = length(rname),
     ncol = length(cname), dimnames = list(rname, cname)
   ))
+
+  .Object@active.assay <- new("character")
+  .Object@active.atlas <- new("character")
 
   .Object
 })
@@ -25,7 +28,9 @@ setMethod("initialize", "SincastSummary", function(.Object, ..., summary) {
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 setMethod("show", "SincastSummary", function(object) {
   cat("Summary of Sincast results\n")
-  print(object@summary)
+  summary <- object@summary
+  summary[is.na(summary)] <- "-"
+  print(summary)
 })
 
 
@@ -33,6 +38,6 @@ setMethod("show", "SincastSummary", function(object) {
 # summary.Sincast
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 setMethod("summary", "Sincast", function(object) {
-  show(object@summary)
+  object@summary
 })
 

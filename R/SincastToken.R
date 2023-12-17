@@ -10,7 +10,7 @@ GenerateSincastToken <- function(by = "GenerateSincastToken", command = deparse(
       command <- extend
 
     }else{
-      stop("Invalid Extension.")
+      stop("GenerateSincastToken: Invalid Extension.")
     }
 
     new("SincastToken", id = id, timestamp = timestamp, by = by, command = command)

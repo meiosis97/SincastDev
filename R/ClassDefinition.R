@@ -43,7 +43,9 @@ SincastToken <- setClass(
 SincastSummary <- setClass(
   Class = "SincastSummary",
   slots = list(
-    summary = "data.frame"
+    summary = "data.frame",
+    active.assay = "character",
+    active.atlas = "character"
   )
 )
 
@@ -56,23 +58,43 @@ SincastSummary <- setClass(
 setValidity(
   Class = "SincastSummary",
   method = function(object) {
-    out <- TRUE
+    out <- NULL
 
     if (any(rownames(object@summary) != c(
       "pseudobulk", "imputation",
       "original.atlas", "pseudobulk.atlas",
       "imputation.atlas"
     ))) {
-      out <- "SincastSummary not in a correct format"
+      out <- c(out, "SincastSummary table has unknow row names.")
     }
 
     if (any(colnames(object@summary) != c(
       "assay", "layer", "nfeatures",
-      "nsamples", "ncomponents",
+      "nsamples", "n.components", "var.explained",
       "sparsity.before", "sparsity.after"
     ))) {
-      out <- "SincastSummary not in a correct format"
+      out <- c(out, "SincastSummary table has unknow column names.")
     }
+
+
+    if (
+      !IsCharacterVector(
+        object@active.assay,
+        n = 1, in.which = c("original", "imputation", "pseudobulk")
+      )) {
+      out <- c(out, "active.assay should be either one of 'original', 'imputation' or 'pseudobulk'.")
+    }
+
+    if (
+      !IsCharacterVector(
+        object@active.atlas,
+        n = c(0,1), in.which = c("original", "imputation", "pseudobulk")
+      )) {
+      out <- c(out, "active.atlas should be either one of 'original', 'imputation' or 'pseudobulk'.")
+    }
+
+    if (is.null(out)) out <- TRUE
+
     out
   }
 )
