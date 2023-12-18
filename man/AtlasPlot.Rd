@@ -51,7 +51,7 @@ codes as values and labels of \code{color.by} as names.}
 \item{anno.by}{Additional annotation of cells.}
 
 \item{atlas}{Either one of the "pseudobulk", "imputation" or "original" indicating the
-type of atlas to be plotted Default is the active \code{Sincast} atlas (Can be check by calling the \code{Sincast} object).}
+type of atlas to be plotted. Default is the active \code{Sincast} atlas (Can be check by calling the \code{Sincast} object).}
 }
 \value{
 A \code{plotly} object illustrating 3d principal components.

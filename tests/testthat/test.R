@@ -103,3 +103,14 @@ cv <- apply(b.imputed, 1, function(x) sd(x)/mean(x))
 ggplot() +
   geom_text(aes(mu, 1/abs(cv), label = names(mu)))
 
+################################################################################
+setGeneric("test", function(a = 1, b = 2, c = 4, ...) {
+  standardGeneric("test")
+})
+
+setMethod("test", "numeric", definition = function(a = 1, d= 5, b = 6, c = 8, ...){
+  message(a,b,c,d)
+})
+
+
+test(a= 1)
