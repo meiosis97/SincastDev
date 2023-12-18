@@ -1,6 +1,20 @@
 # Knn regression
 A log file
 
+## 2023-12-14
+1. 尝试了以单细胞的k neighbour为单位进行lasso回归。
+2. 尝试了以变量选择是否来对umap上色，尝试了对变量选择是否进行diffusion。
+3. 尝试了对变量选择是否矩阵的PCA。细胞可被这个矩阵分开。
+4. 和导师们开了会，稍微了解了下大概课题可能存在的问题。
+5. 首先导师们对结果的可解释性提出了质疑，即如何将这些结果推销给生物学家，这个方法的生物学应用在哪。我个人对这点上没有什么问题。我解释了可以从tanscriptional factor analysis入手，分析单细胞的转录激活状态，得到了KA的认可。
+6. Jarny未提出很多的问题，主要在想大家可能criticize这个课题的理由。其中一点是对数据的Sincast imputation这一步，我也觉得不太妥，因为整个流程用了很多knn这个idea，
+7. Jarny提出这个方法的可扩展性，提出了GSEA分析的可能性，我个人认为可能，即在每一个细胞上的变量选择后，对选择的变量进行GSEA分析，在每一个细胞上可计算GSEA score并进行可视化。
+8. KA提出了对knn中k的数量，以及变量选择数量的疑惑，这需要后续分析。
+9. JD提出了对Sincast imputation的可替代方案。首先，Sincast imputation可以被替换为svd low rank approximation。其次，可以不做任何imputation，直接做PC regression，在回归分析中，PC regression也可以看作是一种对数据的imputation，特别是在线性模型，我们可以通过PC regression的回归系数推导gene的回归系数。
+10. 但我还是对PC regression的可解释性存疑，特别要是我们用非线性regression模型的情况下。且无法想象PC regression对如SIENIC之类transcriptional factor analysis的应用。
+11. 想要尝试对regression coefficient matrix以细胞为向量空间的PCA，是否得到的PC score为meta regression model? (考虑restricted loading, 如loading为正值且相加的和为1).
+12. 想要尝试对lasso regression coefficient matrix的zero-preserving low rank approximation, 是否得到的lra能更好的代表变量选择的结果。
+
 ## 2023-12-6
 1. 尝试了以单细胞的k neighbour为单位进行多元线性回归。
 2. 尝试了对数据整体做scaling，而不是在每个neighbourhood中做独立的scaling。不然不同neighbourhood所得到的结果不可比较。
