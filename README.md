@@ -10,6 +10,7 @@ A developing version of Sincast
 6. Create `AtlasPlot` method for Sincast atlas.
 8. A general comment on the coding style: Seurat object dimnames can be different from that of its layer data. Since our function will be working on the actual data, not the Seurat object. Always use the data dimname as **what we have**. That is: available cells are given in the data colnames and available features are given in the data rownames. After get the cells, and features, subset the Suerat object to make it match to the data. Normally, Seurat dimnames can only be larger than the data dimnames.
 9. A general comment on S4 class generics and methods. Signatures of generics/methods defines the classes of arguments on which the function will be called. If the argument provided to the function is not in the correct class as defined by the signature, then the function will not be called. Method signatures must include all generic signatures. When calling a method, the arguments will be first passed to the generic, and its is the generic that calls the method. Therefore, the method can add arguments to the generic only if '...' is an argument to the generic, otherwise the argument cannot not be passed to the method through the genric. The arguments of the method should be in the same order as the argument of the generic, and the former must contains all the arguments of generics. For the addtional method arguments, it must be placed behind the `...`.
+10. Todo, Hillinger distance.
 
 ## 2023-12-12
 1. Formally build what we proposed yesterday into the package.
