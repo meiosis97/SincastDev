@@ -26,8 +26,8 @@ testobj@SincastAtlas@pseudobulk@misc
 capture.output(testobj@SincastAtlas)
 testobj@summary@active.assay
 
-AtlasPlot(testobj)
-
+AtlasPlot(testobj, atlas = "original")
+help("AtlasPlot")
 
 dim(testobj@SincastAtlas@original@assays$RNA$counts)
 tes <- function(){

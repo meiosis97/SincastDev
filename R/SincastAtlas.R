@@ -708,7 +708,6 @@ setMethod("show", "SincastAtlas", function(object) {
 #' @name AtlasPlot
 #' @rdname AtlasPlot
 setGeneric("AtlasPlot", function(object,
-                                      atlas = NULL,
                                       dims = 1:3,
                                       cells = NULL,
                                       color.by = "ident",
@@ -804,12 +803,11 @@ setMethod("AtlasPlot", "Seurat", function(object,
 #' @name AtlasPlot
 #' @rdname AtlasPlot
 setMethod("AtlasPlot", "Sincast", function(object,
-                                                atlas = NULL,
                                                 dims = 1:3,
                                                 cells = NULL,
                                                 color.by = "ident",
                                                 colors = NULL,
-                                                anno.by = NULL, ...) {
+                                                anno.by = NULL, ..., atlas = NULL) {
 
   # Get the Sincast assay.
   if (is.null(atlas)) {
