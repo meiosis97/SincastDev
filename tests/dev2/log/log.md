@@ -9,14 +9,20 @@ A log file
 5. 想要可控制每一个loading变量选择的多少。大概会用soft-shresholding的方法，这涉及到了类lasso方法的最优化算法。
 6. 学习了Alternating Direction Method of Multipliers (ADMM) 算法，里面有关于L1问题的解法。
 7. TODO：细读以下文献：
-8. Regression Shrinkage and Selection via the Lasso (原始lasso的解法)。
-9. Regularization Paths for Generalized Linear Models via Coordinate Descent (glmnet里面lasso的解法)。
-10. Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers (原版ADMM算法).
-11. With Applications to Machine Learning：chapter 16 (教科书对ADMM的解释，有更多的例子).
-12. Sparse Principal Component Analysis (原始sparse pca)。
-13. The Bayesian Lasso (延申阅读)
-14. A Review of the Spike-and-Slab LASSO (延申阅读)
-15. 在convex analysis里面，似乎indicator function都是0或无穷。
+8. [CeSpGRN: Inferring cell-specific gene regulatory networks from single cell multi-omics and spatial data](https://www.biorxiv.org/content/10.1101/2022.03.03.482887v3.full) (cell-specifc network)。
+9. [Cell-specific network constructed by single-cell RNA sequencing data](https://academic.oup.com/nar/article/47/11/e62/5377474?login=false) (cell-specifc network)。
+10. [Constructing local cell-specific networks from single-cell data](https://www.pnas.org/doi/10.1073/pnas.2113178118) (cell-specifc network)。
+11. [c-CSN: Single-cell RNA Sequencing Data Analysis by Conditional Cell-specific Network](https://www.sciencedirect.com/science/article/pii/S1672022921000589) (cell-specifc network)。
+12. [Learning cell-specific networks from dynamics and geometry of single cells](https://www.biorxiv.org/content/10.1101/2023.01.08.523176v3) (cell-specifc network)。
+13. [spliceJAC: transition genes and state-specific gene regulation from single-cell transcriptome data](https://pubmed.ncbi.nlm.nih.gov/36321549/) (cell-specifc network)。
+14. [Regression Shrinkage and Selection via the Lasso](https://www.jstor.org/stable/2346178) (原始lasso的解法)。
+15. [Regularization Paths for Generalized Linear Models via Coordinate Descent](https://pubmed.ncbi.nlm.nih.gov/20808728/) (glmnet里面lasso的解法)。
+16. [Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers](https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf) (原版ADMM算法).
+17. [With Applications to Machine Learning：chapter 16](https://www.cis.upenn.edu/~cis5150/ws-book-IIb.pdf) (教科书对ADMM的解释，有更多的例子).
+18. [Sparse Principal Component Analysis](https://hastie.su.domains/Papers/spc_jcgs.pdf) (原始sparse pca)。
+19. [The Bayesian Lasso](http://www.math.chalmers.se/Stat/Grundutb/GU/MSA220/S18/bayeslasso.pdf) (延申阅读)
+20. [A Review of the Spike-and-Slab LASSO](https://arxiv.org/abs/2010.06451) (延申阅读)
+21. 在convex analysis里面，似乎indicator function都是0或无穷。
 
 ## 2023-12-14
 1. 尝试了以单细胞的k neighbour为单位进行lasso回归。
