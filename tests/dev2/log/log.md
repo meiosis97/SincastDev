@@ -1,6 +1,23 @@
 # Knn regression
 A log file
 
+## 2023-12-21与2023-12-22
+1. 尝试PC了回归。
+2. 发现似乎将PC回归的回归系数还原到高维回归系数时，似乎也可得到较好的变量选择。
+3. PC会更迅速，因此在每个细胞做random forest也成了可能。
+4. 但是PCA作为因子分析的方式，再高维度上的可解释性非常差，所以考虑做sparse PCA，估摸着sPCA能更进一步的提高变量选择的可靠性。
+5. 想要可控制每一个loading变量选择的多少。大概会用soft-shresholding的方法，这涉及到了类lasso方法的最优化算法。
+6. 学习了Alternating Direction Method of Multipliers (ADMM) 算法，里面有关于L1问题的解法。
+7. TODO：细读以下文献：
+8. Regression Shrinkage and Selection via the Lasso (原始lasso的解法)。
+9. Regularization Paths for Generalized Linear Models via Coordinate Descent (glmnet里面lasso的解法)。
+10. Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers (原版ADMM算法).
+11. With Applications to Machine Learning：chapter 16 (教科书对ADMM的解释，有更多的例子).
+12. Sparse Principal Component Analysis (原始sparse pca)。
+13. The Bayesian Lasso (延申阅读)
+14. A Review of the Spike-and-Slab LASSO (延申阅读)
+15. 在convex analysis里面，似乎indicator function都是0或无穷。
+
 ## 2023-12-14
 1. 尝试了以单细胞的k neighbour为单位进行lasso回归。
 2. 尝试了以变量选择是否来对umap上色，尝试了对变量选择是否进行diffusion。
